@@ -10,11 +10,12 @@ contract BladeMasterAsset is ERC721Enumerable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    constructor() ERC721("BladeMasterAsset", "BMA") {}
+    string public _tokenURI = "https://nft.tojoy.org/metadata.example.json";
+
+    constructor() ERC721("TestAsset", "TA") {}
 
     function mintAsset(
-        address _to,
-        string memory _tokenURI
+        address _to
     ) public returns (uint256) {
         uint256 newItemId = _tokenIds.current();
         _mint(_to, newItemId);
@@ -22,5 +23,14 @@ contract BladeMasterAsset is ERC721Enumerable {
 
         _tokenIds.increment();
         return newItemId;
+    }
+
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireMinted(tokenId);
+        return _tokenURI;
+    }
+
+    function DEBUG_resetTokenURI(string memory _newTokenURI) public {
+        _tokenURI = _newTokenURI;
     }
 }

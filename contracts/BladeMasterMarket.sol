@@ -17,21 +17,26 @@ contract BladeMasterMarket {
         uint256 state;
     }
 
-    uint256 public saleIndex;
+    uint256 public saleId;
     uint256 public fee;
 
     mapping(uint256 => Sale) public sales;
 
-    function setup(address _token, uint256 _tokenId, uint256 _price) public {
+    function setup(
+        address _token,
+        uint256 _tokenId,
+        uint256 _price
+    ) public returns (uint256) {
         IERC721(_token).transferFrom(msg.sender, address(this), _tokenId);
-        sales[saleIndex].offerer = msg.sender;
-        sales[saleIndex].tokenAddress = _token;
-        sales[saleIndex].tokenId = _tokenId;
-        sales[saleIndex].price = _price;
-        sales[saleIndex].state = 2;
         unchecked {
-            ++saleIndex;
+            ++saleId;
         }
+        sales[saleId].offerer = msg.sender;
+        sales[saleId].tokenAddress = _token;
+        sales[saleId].tokenId = _tokenId;
+        sales[saleId].price = _price;
+        sales[saleId].state = 2;
+        return saleId;
     }
 
     function trade(uint256 _saleId) public {

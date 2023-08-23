@@ -1,7 +1,7 @@
 {
     "name": "Sword",
     "description": "Blade Master Asset\nA common weapon you could found anywhere.",
-    "image": "https://game.example/item-id-8u5h2m.png",
+    "image": "ipfs://QmfPf1n1vYFPYaz2h2rYr7GoEso7QvD9Y6MdmwNx5sLgJw",
     "attributes": {
         "category": "weapon",
         "health": 10,
