@@ -1,5 +1,5 @@
 {
-    "name": "char 1",
+    "name": "test model",
     "description": "EO character",
     "image": "_______LINK_TO_IMAGE_______",
     "attributes": [
@@ -9,20 +9,21 @@
         },
         {
             "trait_type": "Type",
-            "value": "HP+"
+            "value": "Score+"
         },
         {
             "trait_type": "HP",
-            "value": 100
+            "value": 100,
+            "display_type": "number"
         },
         {
             "trait_type": "Score",
-            "value": 120,
+            "value": 20,
             "display_type": "boost_percentage"
         },
         {
             "trait_type": "Token",
-            "value": 120,
+            "value": 20,
             "display_type": "boost_percentage"
         },
         {

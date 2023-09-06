@@ -3,10 +3,11 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 // import "hardhat/console.sol";
 
-contract BladeMasterMarket {
+contract ElpisOriginMarket is Ownable {
     struct Sale {
         address offerer;
         address tokenAddress;
@@ -22,7 +23,7 @@ contract BladeMasterMarket {
 
     mapping(uint256 => Sale) public sales;
 
-    function setup(
+    function list(
         address _token,
         uint256 _tokenId,
         uint256 _price

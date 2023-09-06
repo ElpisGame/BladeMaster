@@ -13,16 +13,17 @@
         },
         {
             "trait_type": "HP",
-            "value": 100
+            "value": 100,
+            "display_type": "number"
         },
         {
             "trait_type": "Score",
-            "value": 120,
+            "value": 20,
             "display_type": "boost_percentage"
         },
         {
             "trait_type": "Token",
-            "value": 120,
+            "value": 20,
             "display_type": "boost_percentage"
         },
         {
