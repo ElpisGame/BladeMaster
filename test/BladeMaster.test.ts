@@ -8,24 +8,24 @@ import { ethers } from "hardhat";
 import { Signer } from "ethers";
 
 import {
-    BladeMasterAsset,
-    BladeMasterAsset__factory,
-    BladeMasterMarket,
-    BladeMasterMarket__factory,
+    ElpisOriginAsset,
+    ElpisOriginAsset__factory,
+    ElpisOriginMarket,
+    ElpisOriginMarket__factory,
 } from "../typechain-types";
 
 describe("BladeMaster", function () {
     let deployer: Signer;
     let deployerAddr: string;
 
-    let asset: BladeMasterAsset;
-    let market: BladeMasterMarket;
+    let asset: ElpisOriginAsset;
+    let market: ElpisOriginMarket;
 
     before(async function () {
         [deployer] = await ethers.getSigners();
         deployerAddr = await deployer.getAddress();
-        asset = await new BladeMasterAsset__factory(deployer).deploy();
-        market = await new BladeMasterMarket__factory(deployer).deploy();
+        asset = await new ElpisOriginAsset__factory(deployer).deploy();
+        market = await new ElpisOriginMarket__factory(deployer).deploy();
 
         asset.setApprovalForAll(await market.getAddress(), true);
     });

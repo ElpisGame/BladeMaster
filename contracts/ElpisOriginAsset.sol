@@ -17,17 +17,31 @@ contract ElpisOriginAsset is ERC1155Supply, Ownable, AccessControl {
     string public name;
     string public symbol;
 
-    // string public _tokenURI = "https://nft.tojoy.org/metadata.example.json";
+    string public _baseURI = "";
+
+    // Optional mapping for token URIs
+    mapping(uint256 => string) private _tokenURIs;
 
     constructor(
         address _minter,
         string memory _name,
         string memory _symbol
-    ) ERC1155("https://nft.tojoy.org/char1.metadata.json") {
+    ) ERC1155("https://nft.tojoy.org/char{id}.metadata.json") {
         name = _name;
         symbol = _symbol;
         _grantRole(MINTER_ROLE, _minter);
         _grantRole(TRANSFER_ROLE, _minter);
+    }
+
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        require(exists(tokenId), "ElpisOriginAsset: token dose not exist");
+        string memory tokenURI = _tokenURIs[tokenId];
+
+        // If token URI is set, concatenate base URI and tokenURI (via abi.encodePacked).
+        return
+            bytes(tokenURI).length > 0
+                ? string(abi.encodePacked(_baseURI, tokenURI))
+                : super.uri(tokenId);
     }
 
     function mintNewAsset(
@@ -45,7 +59,7 @@ contract ElpisOriginAsset is ERC1155Supply, Ownable, AccessControl {
         return newItemId;
     }
 
-    function mintAsset(
+    function expandAsset(
         address _to,
         uint256 _tokenId,
         uint256 _amount,
@@ -58,6 +72,30 @@ contract ElpisOriginAsset is ERC1155Supply, Ownable, AccessControl {
         _mint(_to, _tokenId, _amount, _data);
     }
 
+    function setTokenURI(string memory _newTokenURI, uint256 _tokenId) public {
+        _setURI(_tokenId, _newTokenURI);
+        emit URI(_newTokenURI, _tokenId);
+    }
+
+    function setBaseURI(string memory _newBaseURI) public {
+        _setBaseURI(_newBaseURI);
+    }
+
+    /**
+     * @dev Sets `tokenURI` as the tokenURI of `tokenId`.
+     */
+    function _setURI(uint256 tokenId, string memory tokenURI) internal {
+        _tokenURIs[tokenId] = tokenURI;
+        emit URI(uri(tokenId), tokenId);
+    }
+
+    /**
+     * @dev Sets `baseURI` as the `_baseURI` for all tokens
+     */
+    function _setBaseURI(string memory baseURI) internal {
+        _baseURI = baseURI;
+    }
+
     function burn(address _from, uint256 _id, uint256 _amount) public {
         _burn(_from, _id, _amount);
     }
@@ -68,18 +106,6 @@ contract ElpisOriginAsset is ERC1155Supply, Ownable, AccessControl {
         uint256[] memory _amounts
     ) public {
         _burnBatch(_from, _ids, _amounts);
-    }
-
-    function DEBUG_resetTokenURI(
-        string memory _newTokenURI,
-        uint256 _tokenId
-    ) public {
-        _setURI(_newTokenURI);
-        emit URI(_newTokenURI, _tokenId);
-    }
-
-    function DEBUG_updateTokenURI(uint256 _tokenId) public {
-        emit URI(uri(_tokenId), _tokenId);
     }
 
     // TODO: does this override ERC721?

@@ -1,7 +1,7 @@
 {
-    "name": "Arika",
-    "description": "In the game, the cat represents strength and has high combat values, once helped Elpis guard the peace of the continent. Now, he is the leader of the gang in Ethoria. ",
-    "animation_url": "_______LINK_TO_IMAGE_______",
+    "name": "Helix",
+    "description": "In the game, the cat is One of Zorix’s follower, has helped him conquer many worlds, extremely calm and rational one.",
+    "animation_url": "_______LINK_TO_MODEL_______",
     "attributes": [
         {
             "trait_type": "Class",
@@ -9,11 +9,11 @@
         },
         {
             "trait_type": "Type",
-            "value": "HP+"
+            "value": "Score+"
         },
         {
             "trait_type": "HP",
-            "value": 300,
+            "value": 200,
             "display_type": "number"
         },
         {
@@ -28,7 +28,7 @@
         },
         {
             "trait_type": "Score Bonus",
-            "value": 20,
+            "value": 40,
             "display_type": "boost_percentage"
         },
         {
