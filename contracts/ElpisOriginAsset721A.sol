@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "./utils/ERC721A.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 // import "hardhat/console.sol";
 
-contract ElpisOriginAsset is ERC721Enumerable, AccessControl {
+contract ElpisOriginAsset is ERC721A, AccessControl {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -19,7 +19,7 @@ contract ElpisOriginAsset is ERC721Enumerable, AccessControl {
         address _minter,
         string memory _name,
         string memory _symbol
-    ) ERC721(_name, _symbol) {
+    ) ERC721A(_name, _symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, _minter);
         _grantRole(MINTER_ROLE, _minter);
     }
@@ -27,7 +27,7 @@ contract ElpisOriginAsset is ERC721Enumerable, AccessControl {
     function tokenURI(
         uint256 _tokenId
     ) public view override returns (string memory) {
-        _requireMinted(_tokenId);
+        require(_exists(_tokenId), "ElpisOriginAsset: token not exist");
         string memory uri = _tokenURIs[_tokenId];
         return bytes(uri).length > 0 ? uri : _tokenURI;
     }
@@ -56,7 +56,7 @@ contract ElpisOriginAsset is ERC721Enumerable, AccessControl {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view override(ERC721Enumerable, AccessControl) returns (bool) {
+    ) public view override(ERC721A, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }

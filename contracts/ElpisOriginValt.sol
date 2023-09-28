@@ -3,8 +3,6 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -29,7 +27,6 @@ contract ElpisOriginValt is ERC165, Ownable {
         uint256 indexed tokenId
     );
 
-    uint256 public nonce;
     address public pocket;
     // tokenAddress => (tokenId => owner)
     mapping(address => mapping(uint256 => address)) public lockedAssets;
@@ -43,12 +40,8 @@ contract ElpisOriginValt is ERC165, Ownable {
     }
 
     function pay(uint256 _nonce, address _token, uint256 _amount) public {
-        require(nonce == _nonce, "ElpisOriginValt: nonce does not match!");
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
-        emit Pay(nonce, _token, _amount);
-        unchecked {
-            ++nonce;
-        }
+        emit Pay(_nonce, _token, _amount);
     }
 
     function withdrawFund(address _token, uint256 _amount) public {
@@ -84,8 +77,6 @@ contract ElpisOriginValt is ERC165, Ownable {
     ) public view virtual override returns (bool) {
         return
             interfaceId == type(IERC721).interfaceId ||
-            interfaceId == type(IERC721Metadata).interfaceId ||
-            interfaceId == type(IERC721Enumerable).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }

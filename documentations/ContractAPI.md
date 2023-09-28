@@ -5,23 +5,20 @@
 
 # Elpis: Origin Asset
 
-The NFT tokens in Elpis: Origin are derived from ERC1155Supply. Common ERC1155Supply APIs can be found at: https://docs.openzeppelin.com/contracts/4.x/erc1155.
+The NFT tokens in Elpis: Origin are derived from ERC721. Common ERC721 APIs can be found at: https://docs.openzeppelin.com/contracts/4.x/erc721.
 
 Here are some quick references, the `view` keyword indicates that this function is a read-only function.
 
--   `mintAsset(address  _to, uint256 _amount, bytes _data) onlyOwner`
+-   `mintAsset(address  _to) onlyOwner`
     Mint `_amount` number of assets and transfer them to address `to`. Server needs to keep track of the tokenId and generate the corresponding metadata file.
 
--   `setApprovalForAll(address  operator, bool  approved)`
-    Set user's NFTs' approval to `approved` for `operator` to operate.
-
--   `totalSupply(uint256  id) view returns (uint256)`
+-   `totalSupply() view returns (uint256)`
     Return total number of token minted with token id `id`.
 
 -   `balanceOf(address  account, uint256  id) view returns (uint256)`
     Return the amount of token owned by `account` with token id `id`.
 
--   `uri(uint256 tokenId) view returns (string  memory)`
+-   `tokenURI(uint256 tokenId) view returns (string  memory)`
     Returns the link to the metadata of the `tokenId` token.
 
 # Elpis: Origin Marketplace
@@ -42,6 +39,9 @@ Elpis: Origin provides a marketplace for users to trade their in-game assets usi
 
 # Elpis: Origin Vault
 
+-   `nonce()`
+    Return the nonce value for next transaction.
+
 -   `pay(uint256  _nonce, address  _token, uint256  _amount)`
     Payment for certain item.
     `_nonce`: one-time assigned nonce for the purchase;
@@ -57,3 +57,7 @@ Elpis: Origin provides a marketplace for users to trade their in-game assets usi
     Export NFT to wallet which imported the NFT.
     `_token`: NFT contract address;
     `_tokenId`: NFT corresponding token id.
+
+## Purchase flowchart:
+
+<iframe width="768" height="432" src="https://miro.com/app/live-embed/uXjVMigIuJc=/?moveToViewport=-1012,-541,1612,904&embedId=966780456345" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>
