@@ -10,9 +10,9 @@ contract ElpisOriginSubToken is ERC20, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     constructor(
+        address _minter,
         string memory _name,
-        string memory _symbol,
-        address _minter
+        string memory _symbol
     ) ERC20(_name, _symbol) {
         _mint(msg.sender, 10 ** 30);
         _grantRole(DEFAULT_ADMIN_ROLE, _minter);

@@ -45,12 +45,12 @@ contract ElpisOriginAsset is ERC721Enumerable, AccessControl {
         return newItemId;
     }
 
-    function setTokenURI(string memory _newTokenURI) public {
+    function setTokenURI(string memory _newTokenURI) public onlyRole(MINTER_ROLE) {
         _tokenURI = _newTokenURI;
         // emit URI(_newTokenURI, _tokenId);
     }
 
-    function burn(uint256 _id) public {
+    function burn(uint256 _id) public onlyRole(MINTER_ROLE) {
         _burn(_id);
     }
 

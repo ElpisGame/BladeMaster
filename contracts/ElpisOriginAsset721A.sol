@@ -7,12 +7,10 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 // import "hardhat/console.sol";
 
-contract ElpisOriginAsset is ERC721A, AccessControl {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+contract ElpisOriginAsset721A is ERC721A, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    string public _tokenURI = "https://nft.tojoy.org/char{id}.metadata.json";
+    string public _tokenURI = "https://assets.elpisgame.io/test/arika.json";
     mapping(uint256 => string) public _tokenURIs;
 
     constructor(
@@ -22,6 +20,10 @@ contract ElpisOriginAsset is ERC721A, AccessControl {
     ) ERC721A(_name, _symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, _minter);
         _grantRole(MINTER_ROLE, _minter);
+    }
+
+    function nextTokenId() public view returns (uint256) {
+        return _nextTokenId();
     }
 
     function tokenURI(
@@ -35,22 +37,35 @@ contract ElpisOriginAsset is ERC721A, AccessControl {
     function mintAsset(
         address _to,
         string memory _uniqueTokenURI
-    ) public onlyRole(MINTER_ROLE) returns (uint256) {
-        uint256 newItemId = _tokenIds.current();
-        _mint(_to, newItemId);
+    ) public onlyRole(MINTER_ROLE) {
         if (bytes(_uniqueTokenURI).length > 0) {
-            _tokenURIs[newItemId] = _uniqueTokenURI;
+            _tokenURIs[_nextTokenId()] = _uniqueTokenURI;
         }
-        _tokenIds.increment();
-        return newItemId;
+        _mint(_to, 1);
     }
 
-    function setTokenURI(string memory _newTokenURI) public {
+    function mintAssetBatch(
+        address _to,
+        uint256 _amount
+    ) public onlyRole(MINTER_ROLE) {
+        _mint(_to, _amount);
+    }
+
+    function setTokenURI(
+        string memory _newTokenURI
+    ) public onlyRole(MINTER_ROLE) {
         _tokenURI = _newTokenURI;
+    }
+
+    function updateUniqueTokenURI(
+        uint256 _tokenId,
+        string memory _newTokenURI
+    ) public onlyRole(MINTER_ROLE) {
+        _tokenURIs[_tokenId] = _newTokenURI;
         // emit URI(_newTokenURI, _tokenId);
     }
 
-    function burn(uint256 _id) public {
+    function burn(uint256 _id) public onlyRole(MINTER_ROLE) {
         _burn(_id);
     }
 

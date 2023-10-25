@@ -2,6 +2,7 @@
     "name": "Helix",
     "description": "In the game, the cat is One of Zorix’s follower, has helped him conquer many worlds, extremely calm and rational one.",
     "animation_url": "_______LINK_TO_MODEL_______",
+    "background_color": "AF5BEA",
     "attributes": [
         {
             "trait_type": "Class",
