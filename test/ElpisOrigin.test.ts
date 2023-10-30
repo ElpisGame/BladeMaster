@@ -49,7 +49,8 @@ describe("BladeMaster", function () {
         asset = await new ElpisOriginAsset721A__factory(deployer).deploy(
             deployerAddr,
             "Elpis NFT",
-            "NFT"
+            "NFT",
+            "Token-URI"
         );
         assetAddress = await asset.getAddress();
         token = await new ElpisOriginSubToken__factory(deployer).deploy(
@@ -80,18 +81,27 @@ describe("BladeMaster", function () {
         it("Asset", async function () {
             const initialBalance = await asset.balanceOf(deployerAddr);
             const nextTokenId = await asset.nextTokenId();
+
+            // #region: tokenURI
             const testURI = "test URI";
             await asset.mintAsset(deployerAddr, testURI);
             expect(await asset.tokenURI(nextTokenId)).to.be.equal(testURI);
             expect(await asset.balanceOf(deployerAddr)).to.be.equal(
                 initialBalance + 1n
             );
+            // update tokenURI
+            const testURI2 = "test URI2";
+            await expect(asset.updateUniqueTokenURI(nextTokenId, testURI2))
+                .to.emit(asset, "MetadataUpdate")
+                .withArgs(nextTokenId);
+            expect(await asset.tokenURI(nextTokenId)).to.be.equal(testURI2);
+            // #endregion
 
             // fail case: not minter role
             await expect(asset.connect(signer1).mintAsset(deployerAddr, "")).to
                 .be.reverted;
 
-            // batch mint
+            // #region: batch mint
             await asset.mintAssetBatch(deployerAddr, 4);
             expect(await asset.balanceOf(deployerAddr)).to.be.equal(
                 initialBalance + 5n
@@ -100,8 +110,9 @@ describe("BladeMaster", function () {
             expect(await asset.balanceOf(deployerAddr)).to.be.equal(
                 initialBalance + 4n
             );
+            // #endregion
 
-            // access control
+            // #region: access control
             const minterRole = ethers.keccak256(
                 ethers.toUtf8Bytes("MINTER_ROLE")
             );
@@ -111,6 +122,7 @@ describe("BladeMaster", function () {
                 .to.emit(asset, "RoleGranted")
                 .withArgs(minterRole, signer1Addr, deployerAddr);
             expect(await asset.hasRole(minterRole, signer1Addr)).to.be.true;
+            // #endregion
         });
 
         it("Vault", async function () {
@@ -121,13 +133,16 @@ describe("BladeMaster", function () {
                 .to.emit(vault, "Pay")
                 .withArgs(0, tokenAddress, ONE_ETH);
             expect(await token.balanceOf(vaultAddress)).to.be.equal(ONE_ETH);
+
+            await vault.withdrawFund(tokenAddress, ONE_ETH);
+            expect(await token.balanceOf(vaultAddress)).to.be.equal(0n);
             // #endregion
 
             // #region: token lock/release
             await expect(vault.lockToken(tokenAddress, ONE_ETH))
                 .to.emit(vault, "LockToken")
                 .withArgs(deployerAddr, tokenAddress, ONE_ETH);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(TWO_ETH);
+            expect(await token.balanceOf(vaultAddress)).to.be.equal(ONE_ETH);
 
             // fail case: withdraw exceeded amount
             await expect(
@@ -137,7 +152,7 @@ describe("BladeMaster", function () {
             await expect(vault.releaseToken(tokenAddress, ONE_ETH))
                 .to.emit(vault, "ReleaseToken")
                 .withArgs(deployerAddr, tokenAddress, ONE_ETH);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(ONE_ETH);
+            expect(await token.balanceOf(vaultAddress)).to.be.equal(0n);
             // #endregion
 
             // #region: asset lock/release
@@ -153,7 +168,7 @@ describe("BladeMaster", function () {
 
             await expect(vault.releaseAsset(assetAddress, tokenId))
                 .to.emit(vault, "ReleaseAsset")
-                .withArgs(ethers.ZeroAddress, assetAddress, tokenId);
+                .withArgs(deployerAddr, assetAddress, tokenId);
             expect(await asset.balanceOf(vaultAddress)).to.be.equal(0);
             // #endregion
         });

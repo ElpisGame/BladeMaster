@@ -2,24 +2,36 @@
 pragma solidity ^0.8.9;
 
 import "./utils/ERC721A.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 // import "hardhat/console.sol";
 
 contract ElpisOriginAsset721A is ERC721A, AccessControl {
+
+    /// @dev This event emits when the metadata of a token is changed.
+    /// So that the third-party platforms such as NFT market could
+    /// timely update the images and related attributes of the NFT.
+    event MetadataUpdate(uint256 _tokenId);
+
+    /// @dev This event emits when the metadata of a range of tokens is changed.
+    /// So that the third-party platforms such as NFT market could
+    /// timely update the images and related attributes of the NFTs.    
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
+
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    string public _tokenURI = "https://assets.elpisgame.io/test/arika.json";
+    string public _tokenURI;
     mapping(uint256 => string) public _tokenURIs;
 
     constructor(
         address _minter,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        string memory _uri
     ) ERC721A(_name, _symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, _minter);
         _grantRole(MINTER_ROLE, _minter);
+        _tokenURI = _uri;
     }
 
     function nextTokenId() public view returns (uint256) {
@@ -62,7 +74,14 @@ contract ElpisOriginAsset721A is ERC721A, AccessControl {
         string memory _newTokenURI
     ) public onlyRole(MINTER_ROLE) {
         _tokenURIs[_tokenId] = _newTokenURI;
-        // emit URI(_newTokenURI, _tokenId);
+        emit MetadataUpdate(_tokenId);
+    }
+
+    function updateMetadata(
+        uint256 _fromTokenId,
+        uint256 _toTokenId
+    ) public onlyRole(MINTER_ROLE) {
+        emit BatchMetadataUpdate(_fromTokenId, _toTokenId);
     }
 
     function burn(uint256 _id) public onlyRole(MINTER_ROLE) {
@@ -72,6 +91,7 @@ contract ElpisOriginAsset721A is ERC721A, AccessControl {
     function supportsInterface(
         bytes4 interfaceId
     ) public view override(ERC721A, AccessControl) returns (bool) {
-        return super.supportsInterface(interfaceId);
+        // 0x49064906 used for metadata update
+        return interfaceId == bytes4(0x49064906) || super.supportsInterface(interfaceId);
     }
 }

@@ -5,7 +5,7 @@
 
 # Elpis: Origin Asset
 
-The NFT tokens in Elpis: Origin are derived from ERC721. Common ERC721 APIs can be found at: https://docs.openzeppelin.com/contracts/4.x/erc721.
+The NFT tokens in Elpis: Origin are derived from ERC721A. Common ERC721 APIs can be found at: https://docs.openzeppelin.com/contracts/4.x/erc721.
 
 Here are some quick references, the `view` keyword indicates that this function is a read-only function.
 
@@ -48,15 +48,51 @@ Elpis: Origin provides a marketplace for users to trade their in-game assets usi
     `_token`: token used for the purchase;
     `_amount`: the amount of token paid.
 
+-   `lockToken(address  _token, uint256  _amount)`
+    Import NFT to game.
+    `_token`: token contract address;
+    `_amount`: the amount of token.
+    emit `LockToken(msg.sender, _token, _amount)`
+
+-   `releaseToken(address  _token, uint256  _amount)`
+    Export NFT to wallet which imported the NFT.
+    `_token`: NFT contract address;
+    `_amount`: the amount of token.
+    emit `ReleaseToken(msg.sender, _token, _amount)`
+
 -   `lockAsset(address  _token, uint256  _tokenId)`
     Import NFT to game.
     `_token`: NFT contract address;
     `_tokenId`: NFT corresponding token id.
+    emit `LockAsset(msg.sender, _token, _tokenId)`
 
 -   `releaseAsset(address  _token, uint256  _tokenId)`
     Export NFT to wallet which imported the NFT.
     `_token`: NFT contract address;
     `_tokenId`: NFT corresponding token id.
+    emit `LockAsset(msg.sender, _token, _tokenId)`
+
+## Deployed contracts:
+
+### Polygon testnet (Mumbai)
+
+| Contract | Address                                    |
+| -------- | ------------------------------------------ |
+| USDT     | 0x7DE99fe2687827cC60d38f626549226F0a68269A |
+| NFT      | 0x6B8a176Ab8e37dF3542fb34030Be66229a1361da |
+| Vault    | 0xdd9E7EEe53Bd39ca687aF278a8bDfe1e53fE9C03 |
+
+### Polygon mainnet
+
+| Contract | Address |
+| -------- | ------- |
+| USDT     |         |
+| NFT      |         |
+| Vault    |         |
+
+## NFT lifecycle:
+
+<iframe width="768" height="432" src="https://miro.com/app/live-embed/uXjVMtoNo5U=/?moveToViewport=-1631,-516,1926,1080&embedId=316077058569" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>
 
 ## Purchase flowchart:
 

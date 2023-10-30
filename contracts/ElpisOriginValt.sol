@@ -60,7 +60,7 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
     }
 
     function withdrawFund(address _token, uint256 _amount) public {
-        IERC20(_token).transferFrom(address(this), pocket, _amount);
+        IERC20(_token).transfer(pocket, _amount);
     }
 
     function withdrawAsset(address _token, uint256 _tokenId) public onlyOwner {
@@ -101,7 +101,7 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
             _tokenId
         );
         lockedAssets[_token][_tokenId] = address(0);
-        emit ReleaseAsset(lockedAssets[_token][_tokenId], _token, _tokenId);
+        emit ReleaseAsset(msg.sender, _token, _tokenId);
     }
 
     function supportsInterface(

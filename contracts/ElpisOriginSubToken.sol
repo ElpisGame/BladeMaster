@@ -22,8 +22,4 @@ contract ElpisOriginSubToken is ERC20, AccessControl {
     function mint(address _to, uint256 _amount) public onlyRole(MINTER_ROLE) {
         _mint(_to, _amount);
     }
-
-    function testMint(address _to, uint256 _amount) public {
-        _mint(_to, _amount);
-    }
 }
