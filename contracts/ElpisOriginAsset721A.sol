@@ -46,6 +46,11 @@ contract ElpisOriginAsset721A is ERC721A, AccessControl {
         return bytes(uri).length > 0 ? uri : _tokenURI;
     }
 
+    function transferMinterAdmin(address _newAdmin) public {
+        grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
+        renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
     function mintAsset(
         address _to,
         string memory _uniqueTokenURI
