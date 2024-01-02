@@ -4,7 +4,7 @@ import {
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { Signer } from "ethers";
 
 import {
@@ -22,6 +22,7 @@ const ONE_ETH = ethers.parseEther("1");
 const TWO_ETH = ethers.parseEther("2");
 
 describe("BladeMaster", function () {
+    let snapshotId: string;
     let deployer: Signer;
     let signer1: Signer;
     let deployerAddr: string;
@@ -36,6 +37,8 @@ describe("BladeMaster", function () {
     let tokenAddress: string;
     let marketAddress: string;
     let vaultAddress: string;
+
+    const initialTokenId = 0;
 
     before(async function () {
         // setup signers for testing
@@ -66,18 +69,24 @@ describe("BladeMaster", function () {
         );
         vaultAddress = await vault.getAddress();
 
+        // set approvals
         asset.setApprovalForAll(vaultAddress, true);
         asset.setApprovalForAll(marketAddress, true);
+
+        // mint one NFT
+        await asset.mintAsset(deployerAddr, "");
+        expect(await asset.ownerOf(initialTokenId)).to.be.equal(deployerAddr);
+    });
+
+    beforeEach(async () => {
+        snapshotId = await network.provider.send("evm_snapshot", []);
+    });
+
+    afterEach(async () => {
+        await network.provider.send("evm_revert", [snapshotId]);
     });
 
     describe("Basic Functions", function () {
-        const tokenId = 0;
-
-        before(async function () {
-            await asset.mintAsset(deployerAddr, "");
-            expect(await asset.ownerOf(tokenId)).to.be.equal(deployerAddr);
-        });
-
         it("Asset", async function () {
             const initialBalance = await asset.balanceOf(deployerAddr);
             const nextTokenId = await asset.nextTokenId();
@@ -156,23 +165,59 @@ describe("BladeMaster", function () {
             // #endregion
 
             // #region: asset lock/release
-            await expect(vault.lockAsset(assetAddress, tokenId))
+            await expect(vault.lockAsset(assetAddress, initialTokenId))
                 .to.emit(vault, "LockAsset")
-                .withArgs(deployerAddr, assetAddress, tokenId);
+                .withArgs(deployerAddr, assetAddress, initialTokenId);
             expect(await asset.balanceOf(vaultAddress)).to.be.equal(1);
 
             // fail case: release someone else's asset
             await expect(
-                vault.connect(signer1).releaseAsset(assetAddress, tokenId)
+                vault
+                    .connect(signer1)
+                    .releaseAsset(assetAddress, initialTokenId)
             ).to.be.revertedWith("ElpisOriginValt: not the owner");
 
-            await expect(vault.releaseAsset(assetAddress, tokenId))
+            await expect(vault.releaseAsset(assetAddress, initialTokenId))
                 .to.emit(vault, "ReleaseAsset")
-                .withArgs(deployerAddr, assetAddress, tokenId);
+                .withArgs(deployerAddr, assetAddress, initialTokenId);
             expect(await asset.balanceOf(vaultAddress)).to.be.equal(0);
             // #endregion
         });
+    });
 
-        it("Market", async function () {});
+    describe("Market", function () {
+        let saleId;
+        it("List/buy", async function () {
+            console.log("Total supply: ", await asset.totalSupply());
+
+            await market.list(assetAddress, 0, tokenAddress, ONE_ETH);
+            saleId = await market.saleId();
+            expect(await asset.balanceOf(marketAddress)).to.be.equal(1n);
+            // console.log(await market.saleInfos(saleId));
+
+            // step 1: approve token
+            await token.approve(marketAddress, ethers.MaxUint256);
+            // step 2: purchase
+            await market.purchase(saleId);
+
+            const auctionPeriod = 100n;
+            await market.listForAuction(
+                assetAddress,
+                0,
+                tokenAddress,
+                ONE_ETH,
+                auctionPeriod
+            );
+            saleId = await market.saleId();
+            await market.bid(saleId, TWO_ETH);
+            // fail case: claim before end time
+            await expect(market.claim(saleId)).to.be.revertedWith(
+                "ElpisOriginMarket: active auction"
+            );
+            await network.provider.send("evm_increaseTime", [
+                Number(auctionPeriod),
+            ]);
+            await market.claim(saleId);
+        });
     });
 });

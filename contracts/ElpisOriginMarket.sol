@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 contract ElpisOriginMarket is Ownable {
 
@@ -54,6 +54,7 @@ contract ElpisOriginMarket is Ownable {
     function list(
         address _nftaddress,
         uint256 _nftId,
+        address _paymentTokenAddress,
         uint256 _price
     ) public returns (uint256) {
         IERC721(_nftaddress).transferFrom(msg.sender, address(this), _nftId);
@@ -63,6 +64,7 @@ contract ElpisOriginMarket is Ownable {
         saleInfos[saleId].owner = msg.sender;
         saleInfos[saleId].nftAddress = _nftaddress;
         saleInfos[saleId].nftId = _nftId;
+        saleInfos[saleId].paymentTokenAddress = _paymentTokenAddress;
         saleInfos[saleId].listedPrice = _price;
         emit itemListed(msg.sender, _nftaddress, _nftId);
         return saleId;
@@ -77,23 +79,23 @@ contract ElpisOriginMarket is Ownable {
     function listForAuction(
         address _nftaddress,
         uint256 _nftId,
+        address _paymentTokenAddress,
         uint256 _startingPrice,
         uint256 _timeFromNow
     ) public returns (uint256) {
-        return listForAuction(_nftaddress, _nftId, _startingPrice, block.timestamp, block.timestamp + _timeFromNow);
+        return listForAuction(_nftaddress, _nftId, _paymentTokenAddress, _startingPrice, block.timestamp, block.timestamp + _timeFromNow);
     }
 
     function listForAuction(
         address _nftaddress,
         uint256 _nftId,
+        address _paymentTokenAddress,
         uint256 _startingPrice,
         uint256 _startTime,
         uint256 _endTime
     ) public returns (uint256) {
         require(_startTime >= block.timestamp, "ElpisOriginMarket: invalid starting time");
-        if (maxAuctionPeriod > 0) {
-            require(_endTime - _startTime >= maxAuctionPeriod, "ElpisOriginMarket: exceed max period");
-        }
+        require(_endTime - _startTime <= maxAuctionPeriod, "ElpisOriginMarket: exceed max period");
         IERC721(_nftaddress).transferFrom(msg.sender, address(this), _nftId);
         unchecked {
             ++saleId;
@@ -101,6 +103,7 @@ contract ElpisOriginMarket is Ownable {
         saleInfos[saleId].owner = msg.sender;
         saleInfos[saleId].nftAddress = _nftaddress;
         saleInfos[saleId].nftId = _nftId;
+        saleInfos[saleId].paymentTokenAddress = _paymentTokenAddress;
         saleInfos[saleId].lastBidPrice = _startingPrice;
         saleInfos[saleId].startTime = _startTime;
         saleInfos[saleId].endTime = _endTime;
@@ -109,6 +112,8 @@ contract ElpisOriginMarket is Ownable {
     }
 
     function purchase(uint256 _saleId) public {
+        require(saleInfos[_saleId].nftAddress != address(0), "ElpisOriginMarket: invalid sale");
+        require(saleInfos[_saleId].endTime == 0, "ElpisOriginMarket: cannot purchase auction item");
         // fee
         IERC20(saleInfos[_saleId].paymentTokenAddress).transferFrom(
             msg.sender,
@@ -127,9 +132,11 @@ contract ElpisOriginMarket is Ownable {
             saleInfos[_saleId].nftId
         );
         emit itemSold(msg.sender, saleInfos[_saleId].nftAddress, saleInfos[_saleId].nftId);
+        saleInfos[_saleId].nftAddress = address(0);
     }
 
     function bid(uint256 _saleId, uint256 _newBid) public {
+        require(saleInfos[_saleId].nftAddress != address(0), "ElpisOriginMarket: invalid sale");
         require(block.timestamp >= saleInfos[_saleId].startTime && 
             block.timestamp <= saleInfos[_saleId].endTime, 
             "ElpisOriginMarket: bad timing");
@@ -152,6 +159,7 @@ contract ElpisOriginMarket is Ownable {
     }
 
     function claim(uint256 _saleId) public {
+        require(saleInfos[_saleId].endTime <= block.timestamp, "ElpisOriginMarket: active auction");
         IERC20(saleInfos[_saleId].paymentTokenAddress).transfer(
             saleInfos[_saleId].owner,
             saleInfos[_saleId].lastBidPrice - (saleInfos[_saleId].lastBidPrice * fee / BASE_RATIO)
@@ -162,5 +170,6 @@ contract ElpisOriginMarket is Ownable {
             saleInfos[_saleId].nftId
         );
         emit itemSold(msg.sender, saleInfos[_saleId].nftAddress, saleInfos[_saleId].nftId);
+        saleInfos[_saleId].nftAddress = address(0);
     }
 }
