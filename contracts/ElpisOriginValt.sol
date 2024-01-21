@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
+import "./interfaces/IElpisOriginAsset.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -10,10 +11,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 // import "hardhat/console.sol";
 
 contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
+
+    event DistributeAsset(
+        address indexed owner,
+        address indexed nftAddress,
+        uint256 indexed nftId
+    );
+
     event Pay(
-        uint256 indexed nonce,
-        address indexed token,
-        uint256 indexed amount
+        uint256 indexed saleId,
+        address indexed nftAddress,
+        uint256 indexed nftId,
+        address tokenAddress,
+        uint256 price
     );
 
     event LockToken(
@@ -22,7 +32,7 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
         uint256 indexed amount
     );
 
-    event ReleaseToken(
+    event UnlockToken(
         address indexed owner,
         address indexed token,
         uint256 indexed amount
@@ -34,41 +44,64 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
         uint256 indexed tokenId
     );
 
-    event ReleaseAsset(
+    event UnlockAsset(
         address indexed owner,
         address indexed token,
         uint256 indexed tokenId
     );
 
+    struct SaleInfo {
+        address nftAddress;
+        uint256 nftId;
+        address tokenAddress;
+        uint256 amount;
+    }
+
     address public pocket;
 
+    uint256 public saleInfoId;
+    mapping(uint256 => SaleInfo) public saleInfos;
+
     mapping(address => mapping(address => uint256)) public lockedToken;
-    // tokenAddress => (tokenId => owner)
     mapping(address => mapping(uint256 => address)) public lockedAssets;
 
     constructor(address _pocket) {
         pocket = _pocket;
     }
 
-    function setPocketAddress(address _newPocket) public onlyOwner {
-        pocket = _newPocket;
-    }
-
-    function pay(uint256 _nonce, address _token, uint256 _amount) public {
-        IERC20(_token).transferFrom(msg.sender, address(this), _amount);
-        emit Pay(_nonce, _token, _amount);
-    }
-
     function withdrawFund(address _token, uint256 _amount) public {
         IERC20(_token).transfer(pocket, _amount);
     }
 
-    function withdrawAsset(address _token, uint256 _tokenId) public onlyOwner {
+    function setPocketAddress(address _newPocket) public onlyOwner {
+        require(_newPocket != address(0), "ElpisOriginValt: cannot set pocket to address zero");
+        pocket = _newPocket;
+    }
+
+    function setupSale(address _nftaddress, uint256 _nftId, address _token, uint256 _amount) public onlyOwner {
+        require(IERC721(_nftaddress).ownerOf(_nftId) == address(this), "ElpisOriginValt: missing the nft");
+        saleInfos[saleInfoId] = SaleInfo(_nftaddress, _nftId, _token, _amount);
+        ++saleInfoId;
+    }
+
+    function withdrawAsset(address _nftAddress, uint256 _nftId) public onlyOwner {
         require(
-            lockedAssets[_token][_tokenId] == address(0),
+            lockedAssets[_nftAddress][_nftId] == address(0),
             "ElpisOriginValt: token has owner"
         );
-        IERC721(_token).safeTransferFrom(address(this), msg.sender, _tokenId);
+        IERC721(_nftAddress).safeTransferFrom(address(this), msg.sender, _nftId);
+    }
+
+    function distributeAsset(address _newOwner, address _nftaddress, uint256 _nftId) public onlyOwner {
+        require(lockedAssets[_nftaddress][_nftId] == address(0), "ElpisOriginValt: nft not available");
+        lockedAssets[_nftaddress][_nftId] = _newOwner;
+        emit DistributeAsset(_newOwner, _nftaddress, _nftId);
+    }
+
+    function pay(uint256 saleId) public {
+        IERC20(saleInfos[saleId].tokenAddress).transferFrom(msg.sender, address(this), saleInfos[saleId].amount);
+        IERC721(saleInfos[saleId].nftAddress).transferFrom(address(this), msg.sender, saleInfos[saleId].nftId);
+        emit Pay(saleId, saleInfos[saleId].nftAddress, saleInfos[saleId].nftId, saleInfos[saleId].tokenAddress, saleInfos[saleId].amount);
     }
 
     function lockToken(address _token, uint256 _amount) public {
@@ -77,31 +110,32 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
         emit LockToken(msg.sender, _token, _amount);
     }
 
-    function releaseToken(address _token, uint256 _amount) public {
+    function unlockToken(address _token, uint256 _amount) public {
         require(_amount <= lockedToken[msg.sender][_token], "ElpisOriginValt: exceed max amount");
         IERC20(_token).transfer(
             msg.sender,
             _amount
         );
         lockedToken[msg.sender][_token] -= _amount;
-        emit ReleaseToken(msg.sender, _token, _amount);
+        emit UnlockToken(msg.sender, _token, _amount);
     }
 
-    function lockAsset(address _token, uint256 _tokenId) public {
-        IERC721(_token).safeTransferFrom(msg.sender, address(this), _tokenId);
-        lockedAssets[_token][_tokenId] = msg.sender;
-        emit LockAsset(msg.sender, _token, _tokenId);
+    function lockAsset(address _nftAddress, uint256 _nftId) public {
+        IERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _nftId);
+        lockedAssets[_nftAddress][_nftId] = msg.sender;
+        emit LockAsset(msg.sender, _nftAddress, _nftId);
     }
 
-    function releaseAsset(address _token, uint256 _tokenId) public {
-        require(msg.sender == lockedAssets[_token][_tokenId], "ElpisOriginValt: not the owner");
-        IERC721(_token).safeTransferFrom(
+    function unlockAsset(address _nftAddress, uint256 _nftId) public {
+        require(msg.sender == lockedAssets[_nftAddress][_nftId], "ElpisOriginValt: not the owner");
+        IERC721(_nftAddress).safeTransferFrom(
             address(this),
-            lockedAssets[_token][_tokenId],
-            _tokenId
+            lockedAssets[_nftAddress][_nftId],
+            _nftId
         );
-        lockedAssets[_token][_tokenId] = address(0);
-        emit ReleaseAsset(msg.sender, _token, _tokenId);
+        lockedAssets[_nftAddress][_nftId] = address(0);
+        IElpisOriginAsset(_nftAddress).updateMetadata(_nftId);
+        emit UnlockAsset(msg.sender, _nftAddress, _nftId);
     }
 
     function supportsInterface(

@@ -83,6 +83,12 @@ contract ElpisOriginAsset721A is ERC721A, AccessControl {
     }
 
     function updateMetadata(
+        uint256 _tokenId
+    ) public onlyRole(MINTER_ROLE) {
+        emit MetadataUpdate(_tokenId);
+    }
+
+    function updateMetadata(
         uint256 _fromTokenId,
         uint256 _toTokenId
     ) public onlyRole(MINTER_ROLE) {

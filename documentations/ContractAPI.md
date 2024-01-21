@@ -1,7 +1,8 @@
 # ERC20
 
--   `approve(address  spender, uint256  amount)`\
-    Set the amount of token `amount` allowed to be spent by `spender`.
+-   `approve(address spender, uint256 amount)`\
+
+Set the amount of token `amount` allowed to be spent by `spender`.
 
 # Elpis: Origin Asset
 
@@ -9,68 +10,122 @@ The NFT tokens in Elpis: Origin are derived from ERC721A. Common ERC721 APIs can
 
 Here are some quick references, the `view` keyword indicates that this function is a read-only function.
 
--   `mintAsset(address  _to) onlyOwner`\
-    Mint `_amount` number of assets and transfer them to address `to`. Server needs to keep track of the tokenId and generate the corresponding metadata file.
+-   `mintAsset(address _to) onlyOwner`\
+
+Mint `_amount` number of assets and transfer them to address `to`. Server needs to keep track of the tokenId and generate the corresponding metadata file.
 
 -   `totalSupply() view returns (uint256)`\
-    Return total number of token minted with token id `id`.
 
--   `balanceOf(address  account, uint256  id) view returns (uint256)`\
-    Return the amount of token owned by `account` with token id `id`.
+Return total number of token minted with token id `id`.
 
--   `tokenURI(uint256 tokenId) view returns (string  memory)`\
-    Returns the link to the metadata of the `tokenId` token.
+-   `balanceOf(address account, uint256 id) view returns (uint256)`\
+
+Return the amount of token owned by `account` with token id `id`.
+
+-   `tokenURI(uint256 tokenId) view returns (string memory)`\
+
+Returns the link to the metadata of the `tokenId` token.
 
 # Elpis: Origin Marketplace
 
 Elpis: Origin provides a marketplace for users to trade their in-game assets using Elpis: Origin Token.
 
--   `setup(address  _token, uint256  _tokenId, uint256  _price) returns (uint256)`\
-    Allow user to list their asset for sale, return the id recorded for this sale.\
-    `_token`: the Elpis: Origin Asset token address;\
-    `_tokenId`: the token id the user wishes to list for sale;\
-    `_price`: the number of the token the user wishes to sale for.
+-   `setup(address _token, uint256 _tokenId, uint256 _price) returns (uint256)`\
 
--   `trade(uint256  _saleId)`\
-    Purchase the listed asset with the id of `_saleId`.
+Allow user to list their asset for sale, return the id recorded for this sale.\
 
--   `claim(uint256  _saleId)`\
-    After a successful sale, the seller will be able to claim the token the buyer paid for the asset with the id of `_saleId`.
+`_token`: the Elpis: Origin Asset token address;\
+
+`_tokenId`: the token id the user wishes to list for sale;\
+
+`_price`: the number of the token the user wishes to sale for.
+
+-   `trade(uint256 _saleId)`\
+
+Purchase the listed asset with the id of `_saleId`.
+
+-   `claim(uint256 _saleId)`\
+
+After a successful sale, the seller will be able to claim the token the buyer paid for the asset with the id of `_saleId`.
 
 # Elpis: Origin Vault
 
--   `nonce()`\
-    Return the nonce value for next transaction.
+-   `distributeAsset(address  _newOwner, address  _nftaddress, uint256  _nftId) onlyOwner`\
 
--   `pay(uint256  _nonce, address  _token, uint256  _amount)`\
-    Payment for certain item.\
-    `_nonce`: one-time assigned nonce for the purchase;\
-    `_token`: token used for the purchase;\
-    `_amount`: the amount of token paid.
+Set the owner of a not owned NFT to a user, later the user can unlock the NFT itself.\
 
--   `lockToken(address  _token, uint256  _amount)`\
-    Import NFT to game.\
-    `_token`: token contract address;\
-    `_amount`: the amount of token.\
-    emit `LockToken(msg.sender, _token, _amount)`
+`_newOwner`: the owner of this NFT.\
 
--   `releaseToken(address  _token, uint256  _amount)`\
-    Export NFT to wallet which imported the NFT.\
-    `_token`: NFT contract address;\
-    `_amount`: the amount of token.\
-    emit `ReleaseToken(msg.sender, _token, _amount)`
+`_nftaddress`: NFT contract address;\
 
--   `lockAsset(address  _token, uint256  _tokenId)`\
-    Import NFT to game.\
-    `_token`: NFT contract address;\
-    `_tokenId`: NFT corresponding token id.\
-    emit `LockAsset(msg.sender, _token, _tokenId)`
+`_nftId`: NFT corresponding token id.\
 
--   `releaseAsset(address  _token, uint256  _tokenId)`\
-    Export NFT to wallet which imported the NFT.\
-    `_token`: NFT contract address;\
-    `_tokenId`: NFT corresponding token id.\
-    emit `LockAsset(msg.sender, _token, _tokenId)`
+emit `DistributeAsset(_newOwner, _nftAddress, _nftId)`
+
+-   `pay(uint256 _saleId)`\
+
+Payment for certain item.\
+
+`_saleId`: an id used for certain `SaleInfo`:\
+
+```
+struct  SaleInfo {
+	address nftAddress;
+	uint256 nftId;
+	address tokenAddress;
+	uint256 amount;
+}
+```
+
+`nftAddress`: NFT contract address;\
+
+`nftId`: NFT token id;\
+
+`tokenAddress`: payment token address;\
+
+`amount`: listed price;\
+
+emit `Pay(saleId, nftAddress, nftId, tokenAddress, amount)`\
+
+-   `lockToken(address _token, uint256 _amount)`\
+
+Import token to game.\
+
+`_token`: token contract address;\
+
+`_amount`: the amount of token.\
+
+emit `LockToken(msg.sender, _token, _amount)`
+
+-   `unlockToken(address _token, uint256 _amount)`\
+
+Export token to wallet which imported the token, can only be called by the token owner.\
+
+`_token`: NFT contract address;\
+
+`_amount`: the amount of token.\
+
+emit `UnlockToken(msg.sender, _token, _amount)`
+
+-   `lockAsset(address _nftAddress, uint256 _nftId)`\
+
+Import NFT to game.\
+
+`_nftAddress`: NFT contract address;\
+
+`_nftId`: NFT corresponding token id.\
+
+emit `LockAsset(msg.sender, _nftAddress, _nftId)`
+
+-   `unlockAsset(address _nftAddress, uint256 _nftId)`\
+
+Export NFT to wallet which imported the NFT, can only be called by the NFT owner.\
+
+`_nftAddress`: NFT contract address;\
+
+`_nftId`: NFT corresponding token id.\
+
+emit `UnlockAsset(msg.sender, _nftAddress, _nftId)`
 
 ## NFT lifecycle:
 
