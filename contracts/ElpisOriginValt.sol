@@ -62,7 +62,9 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
     uint256 public saleInfoId;
     mapping(uint256 => SaleInfo) public saleInfos;
 
+    // user address => token address => locked amount
     mapping(address => mapping(address => uint256)) public lockedToken;
+    // nft address => nft id => user address
     mapping(address => mapping(uint256 => address)) public lockedAssets;
 
     constructor(address _pocket) {
@@ -121,7 +123,7 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
     }
 
     function lockAsset(address _nftAddress, uint256 _nftId) public {
-        IERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _nftId);
+        IERC721(_nftAddress).transferFrom(msg.sender, address(this), _nftId);
         lockedAssets[_nftAddress][_nftId] = msg.sender;
         emit LockAsset(msg.sender, _nftAddress, _nftId);
     }

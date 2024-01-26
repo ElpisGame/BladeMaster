@@ -19,18 +19,22 @@ contract ElpisOriginAsset721A is ERC721A, AccessControl {
     event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     string public _tokenURI;
     mapping(uint256 => string) public _tokenURIs;
 
     constructor(
         address _minter,
+        address _vault,
         string memory _name,
         string memory _symbol,
         string memory _uri
     ) ERC721A(_name, _symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, _minter);
         _grantRole(MINTER_ROLE, _minter);
+        _grantRole(ADMIN_ROLE, _minter);
+        _grantRole(ADMIN_ROLE, _vault);
         _tokenURI = _uri;
     }
 
@@ -70,28 +74,28 @@ contract ElpisOriginAsset721A is ERC721A, AccessControl {
 
     function setTokenURI(
         string memory _newTokenURI
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(ADMIN_ROLE) {
         _tokenURI = _newTokenURI;
     }
 
     function updateUniqueTokenURI(
         uint256 _tokenId,
         string memory _newTokenURI
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(ADMIN_ROLE) {
         _tokenURIs[_tokenId] = _newTokenURI;
         emit MetadataUpdate(_tokenId);
     }
 
     function updateMetadata(
         uint256 _tokenId
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(ADMIN_ROLE) {
         emit MetadataUpdate(_tokenId);
     }
 
     function updateMetadata(
         uint256 _fromTokenId,
         uint256 _toTokenId
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(ADMIN_ROLE) {
         emit BatchMetadataUpdate(_fromTokenId, _toTokenId);
     }
 

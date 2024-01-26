@@ -49,13 +49,6 @@ describe("BladeMaster", function () {
         randomAddress = randomWallet.address;
 
         // deploy all contracts
-        asset = await new ElpisOriginAsset721A__factory(deployer).deploy(
-            deployerAddr,
-            "Elpis NFT",
-            "NFT",
-            "Token-URI"
-        );
-        assetAddress = await asset.getAddress();
         token = await new ElpisOriginSubToken__factory(deployer).deploy(
             deployerAddr,
             "Fake USDT",
@@ -68,6 +61,14 @@ describe("BladeMaster", function () {
             randomAddress
         );
         vaultAddress = await vault.getAddress();
+        asset = await new ElpisOriginAsset721A__factory(deployer).deploy(
+            deployerAddr,
+            vaultAddress,
+            "Elpis NFT",
+            "NFT",
+            "Token-URI"
+        );
+        assetAddress = await asset.getAddress();
 
         // set approvals
         asset.setApprovalForAll(vaultAddress, true);
@@ -86,8 +87,8 @@ describe("BladeMaster", function () {
         await network.provider.send("evm_revert", [snapshotId]);
     });
 
-    describe("Basic Functions", function () {
-        it("Asset", async function () {
+    describe("Asset", function () {
+        it("Basic Functions", async function () {
             const initialBalance = await asset.balanceOf(deployerAddr);
             const nextTokenId = await asset.nextTokenId();
 
@@ -125,7 +126,12 @@ describe("BladeMaster", function () {
             const minterRole = ethers.keccak256(
                 ethers.toUtf8Bytes("MINTER_ROLE")
             );
+            const adminRole = ethers.keccak256(
+                ethers.toUtf8Bytes("ADMIN_ROLE")
+            );
             expect(await asset.hasRole(minterRole, deployerAddr)).to.be.true;
+            expect(await asset.hasRole(adminRole, deployerAddr)).to.be.true;
+            expect(await asset.hasRole(adminRole, vaultAddress)).to.be.true;
             expect(await asset.hasRole(minterRole, signer1Addr)).to.be.false;
             await expect(asset.grantRole(minterRole, signer1Addr))
                 .to.emit(asset, "RoleGranted")
@@ -133,63 +139,11 @@ describe("BladeMaster", function () {
             expect(await asset.hasRole(minterRole, signer1Addr)).to.be.true;
             // #endregion
         });
-
-        it("Vault", async function () {
-            // #region: pay method
-            await token.approve(vaultAddress, ethers.MaxUint256);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(0);
-            await expect(vault.pay(0, tokenAddress, ONE_ETH))
-                .to.emit(vault, "Pay")
-                .withArgs(0, tokenAddress, ONE_ETH);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(ONE_ETH);
-
-            await vault.withdrawFund(tokenAddress, ONE_ETH);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(0n);
-            // #endregion
-
-            // #region: token lock/release
-            await expect(vault.lockToken(tokenAddress, ONE_ETH))
-                .to.emit(vault, "LockToken")
-                .withArgs(deployerAddr, tokenAddress, ONE_ETH);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(ONE_ETH);
-
-            // fail case: withdraw exceeded amount
-            await expect(
-                vault.releaseToken(tokenAddress, TWO_ETH)
-            ).to.be.revertedWith("ElpisOriginValt: exceed max amount");
-
-            await expect(vault.releaseToken(tokenAddress, ONE_ETH))
-                .to.emit(vault, "ReleaseToken")
-                .withArgs(deployerAddr, tokenAddress, ONE_ETH);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(0n);
-            // #endregion
-
-            // #region: asset lock/release
-            await expect(vault.lockAsset(assetAddress, initialTokenId))
-                .to.emit(vault, "LockAsset")
-                .withArgs(deployerAddr, assetAddress, initialTokenId);
-            expect(await asset.balanceOf(vaultAddress)).to.be.equal(1);
-
-            // fail case: release someone else's asset
-            await expect(
-                vault
-                    .connect(signer1)
-                    .releaseAsset(assetAddress, initialTokenId)
-            ).to.be.revertedWith("ElpisOriginValt: not the owner");
-
-            await expect(vault.releaseAsset(assetAddress, initialTokenId))
-                .to.emit(vault, "ReleaseAsset")
-                .withArgs(deployerAddr, assetAddress, initialTokenId);
-            expect(await asset.balanceOf(vaultAddress)).to.be.equal(0);
-            // #endregion
-        });
     });
 
     describe("Market", function () {
         let saleId;
         it("List/buy", async function () {
-            console.log("Total supply: ", await asset.totalSupply());
-
             await market.list(assetAddress, 0, tokenAddress, ONE_ETH);
             saleId = await market.saleId();
             expect(await asset.balanceOf(marketAddress)).to.be.equal(1n);
@@ -218,6 +172,102 @@ describe("BladeMaster", function () {
                 Number(auctionPeriod),
             ]);
             await market.claim(saleId);
+        });
+    });
+
+    describe("Vault", function () {
+        it("Pay", async function () {
+            // setup SaleInfo
+            const nextTokenId = await asset.nextTokenId();
+            const nextSaleId = await vault.saleInfoId();
+            await asset.mintAsset(vaultAddress, "");
+            await vault.setupSale(
+                assetAddress,
+                nextTokenId,
+                tokenAddress,
+                ONE_ETH
+            );
+
+            // #region: pay method
+            const initialBalance = await token.balanceOf(vaultAddress);
+            await token.approve(vaultAddress, ethers.MaxUint256);
+            await expect(vault.pay(nextSaleId))
+                .to.emit(vault, "Pay")
+                .withArgs(
+                    nextSaleId,
+                    assetAddress,
+                    nextTokenId,
+                    tokenAddress,
+                    ONE_ETH
+                );
+            expect(await token.balanceOf(vaultAddress)).to.be.equal(
+                initialBalance + ONE_ETH
+            );
+
+            await vault.withdrawFund(tokenAddress, initialBalance + ONE_ETH);
+            expect(await token.balanceOf(vaultAddress)).to.be.equal(0n);
+            // #endregion
+        });
+
+        it("Lock/unlock", async function () {
+            const initialBalance = await asset.balanceOf(vaultAddress);
+            await token.approve(vaultAddress, ethers.MaxUint256);
+
+            // #region: token lock/unlock
+            await expect(vault.lockToken(tokenAddress, ONE_ETH))
+                .to.emit(vault, "LockToken")
+                .withArgs(deployerAddr, tokenAddress, ONE_ETH);
+            expect(await token.balanceOf(vaultAddress)).to.be.equal(ONE_ETH);
+
+            // fail case: withdraw exceeded amount
+            await expect(
+                vault.unlockToken(tokenAddress, TWO_ETH)
+            ).to.be.revertedWith("ElpisOriginValt: exceed max amount");
+
+            await expect(vault.unlockToken(tokenAddress, ONE_ETH))
+                .to.emit(vault, "UnlockToken")
+                .withArgs(deployerAddr, tokenAddress, ONE_ETH);
+            expect(await token.balanceOf(vaultAddress)).to.be.equal(0n);
+            // #endregion
+
+            // #region: asset lock/unlock
+            await expect(vault.lockAsset(assetAddress, initialTokenId))
+                .to.emit(vault, "LockAsset")
+                .withArgs(deployerAddr, assetAddress, initialTokenId);
+            expect(await asset.balanceOf(vaultAddress)).to.be.equal(
+                initialBalance + 1n
+            );
+
+            // fail case: unlock someone else's asset
+            await expect(
+                vault.connect(signer1).unlockAsset(assetAddress, initialTokenId)
+            ).to.be.revertedWith("ElpisOriginValt: not the owner");
+
+            await expect(vault.unlockAsset(assetAddress, initialTokenId))
+                .to.emit(vault, "UnlockAsset")
+                .withArgs(deployerAddr, assetAddress, initialTokenId);
+            expect(await asset.balanceOf(vaultAddress)).to.be.equal(
+                initialBalance
+            );
+            // #endregion
+        });
+
+        it("Asset distribution", async function () {
+            const initialBalance = await asset.balanceOf(deployerAddr);
+            const nextTokenId = await asset.nextTokenId();
+            await asset.mintAsset(vaultAddress, "");
+            await expect(
+                vault.distributeAsset(deployerAddr, assetAddress, nextTokenId)
+            )
+                .to.emit(vault, "DistributeAsset")
+                .withArgs(deployerAddr, assetAddress, nextTokenId);
+
+            await expect(vault.unlockAsset(assetAddress, nextTokenId))
+                .to.emit(vault, "UnlockAsset")
+                .withArgs(deployerAddr, assetAddress, nextTokenId);
+            expect(await asset.balanceOf(deployerAddr)).to.be.equal(
+                initialBalance + 1n
+            );
         });
     });
 });
