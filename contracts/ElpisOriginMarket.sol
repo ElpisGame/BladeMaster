@@ -37,6 +37,8 @@ contract ElpisOriginMarket is Ownable {
     mapping(uint256 => SaleInfo) public saleInfos;
     mapping(address => mapping(address =>uint256)) public unclaimedMoney;
 
+    constructor() Ownable(msg.sender) {}
+
     function adjustFee(uint256 _newFee) public onlyOwner {
         require(_newFee <= BASE_RATIO, "ElpisOriginMarket: fee exceed max value");
         fee = _newFee;

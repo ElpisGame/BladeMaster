@@ -21,7 +21,7 @@ import {
 const ONE_ETH = ethers.parseEther("1");
 const TWO_ETH = ethers.parseEther("2");
 
-describe("BladeMaster", function () {
+describe("Elpis Origin", function () {
     let snapshotId: string;
     let deployer: Signer;
     let signer1: Signer;
@@ -58,7 +58,8 @@ describe("BladeMaster", function () {
         market = await new ElpisOriginMarket__factory(deployer).deploy();
         marketAddress = await market.getAddress();
         vault = await new ElpisOriginValt__factory(deployer).deploy(
-            randomAddress
+            randomAddress,
+            deployerAddr
         );
         vaultAddress = await vault.getAddress();
         asset = await new ElpisOriginAsset721A__factory(deployer).deploy(

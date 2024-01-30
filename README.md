@@ -2,11 +2,12 @@
 
 ### Polygon testnet (Mumbai)
 
-| Contract | Address                                    |
-| -------- | ------------------------------------------ |
-| USDT     | 0x7DE99fe2687827cC60d38f626549226F0a68269A |
-| NFT      | 0x6B8a176Ab8e37dF3542fb34030Be66229a1361da |
-| Vault    | 0xdd9E7EEe53Bd39ca687aF278a8bDfe1e53fE9C03 |
+| Contract    | Address                                    |
+| ----------- | ------------------------------------------ |
+| USDT        | 0x7DE99fe2687827cC60d38f626549226F0a68269A |
+| NFT         | 0x6B8a176Ab8e37dF3542fb34030Be66229a1361da |
+| Vault       | 0xF8A835f46635E408EA4940c6Db6ACb667c6bE07c |
+| Vault Owner | 0x03A65893283C70beC8AC0F6b515Fc40042ce2091 |
 
 ### Polygon mainnet
 

@@ -1,7 +1,5 @@
 # Elpis Origin Contract Workflow
 
----
-
 ## Purchase Process
 
 ###### _ElpisOriginVault.sol_
@@ -12,7 +10,7 @@ NFT purchases in the game are completed in two phases:
 
 When a NFT is minted, it will be transfered to the _ElpisOriginVault.sol_ contract waiting for the admin to setup its `SaleInfo`.
 
-Contract admin need to call `setupSale(address _nftaddress, uint256 _nftId, address _token, uint256 _amount)` to complete the setup process. After successfully setup, a ID (`saleInfoId`) is granted to this `SaleInfo`, and it's auto-incremented by 1 (starting from 0).
+Contract admin need to call `setupSale(address _nftaddress, uint256 _nftId, address _token, uint256 _amount)` to complete the setup process. After successfully setup, a ID (`saleInfoId`) is granted to this `SaleInfo`, and it's auto-incremented by 1 (starting from 1).
 
 ### Phase 2: user purchase
 
