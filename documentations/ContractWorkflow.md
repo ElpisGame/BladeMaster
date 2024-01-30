@@ -16,8 +16,8 @@ Contract admin need to call `setupSale(address _nftaddress, uint256 _nftId, addr
 
 ### Phase 2: user purchase
 
-1. Approve USDT by calling`USDT:approve(ElpisOriginVault, MAX_UINT256)`
-2. Purchase the NFT by calling `pay(saleInfoId)`.
+1. Approve USDT by calling`USDT:approve(ElpisOriginVault, MAX_UINT256)`, this step needs to be done **once** for every new user.
+2. Purchase the NFT by calling `pay(saleInfoId)`, `saleInfoId` is the ID granted by the contract from **Phase 1**.
 
 ###### Reminder: it is also possible that users can send a transaction to the contract calling `pay(uint256 _saleInfoId)` without interacting with the game client or the server.
 

@@ -1,6 +1,6 @@
 # ERC20
 
--   `approve(address spender, uint256 amount)`\
+-   `approve(address spender, uint256 amount)`
 
 Set the amount of token `amount` allowed to be spent by `spender`.
 
@@ -8,21 +8,21 @@ Set the amount of token `amount` allowed to be spent by `spender`.
 
 The NFT tokens in Elpis: Origin are derived from ERC721A. Common ERC721 APIs can be found at: https://docs.openzeppelin.com/contracts/4.x/erc721.
 
-Here are some quick references, the `view` keyword indicates that this function is a read-only function.
+### Functions
 
--   `mintAsset(address _to) onlyOwner`\
+-   `mintAsset(address _to) onlyOwner`
 
 Mint `_amount` number of assets and transfer them to address `to`. Server needs to keep track of the tokenId and generate the corresponding metadata file.
 
--   `totalSupply() view returns (uint256)`\
+-   `totalSupply() view returns (uint256)`
 
 Return total number of token minted with token id `id`.
 
--   `balanceOf(address account, uint256 id) view returns (uint256)`\
+-   `balanceOf(address account, uint256 id) view returns (uint256)`
 
 Return the amount of token owned by `account` with token id `id`.
 
--   `tokenURI(uint256 tokenId) view returns (string memory)`\
+-   `tokenURI(uint256 tokenId) view returns (string memory)`
 
 Returns the link to the metadata of the `tokenId` token.
 
@@ -30,45 +30,31 @@ Returns the link to the metadata of the `tokenId` token.
 
 Elpis: Origin provides a marketplace for users to trade their in-game assets using Elpis: Origin Token.
 
--   `setup(address _token, uint256 _tokenId, uint256 _price) returns (uint256)`\
+### Functions
 
-Allow user to list their asset for sale, return the id recorded for this sale.\
+-   `setup(address _token, uint256 _tokenId, uint256 _price) returns (uint256)`
 
-`_token`: the Elpis: Origin Asset token address;\
+Allow user to list their asset for sale, return the id recorded for this sale.
 
-`_tokenId`: the token id the user wishes to list for sale;\
+`_token`: the Elpis: Origin Asset token address;
+
+`_tokenId`: the token id the user wishes to list for sale;
 
 `_price`: the number of the token the user wishes to sale for.
 
--   `trade(uint256 _saleId)`\
+-   `trade(uint256 _saleId)`
 
 Purchase the listed asset with the id of `_saleId`.
 
--   `claim(uint256 _saleId)`\
+-   `claim(uint256 _saleId)`
 
 After a successful sale, the seller will be able to claim the token the buyer paid for the asset with the id of `_saleId`.
 
 # Elpis: Origin Vault
 
--   `distributeAsset(address  _newOwner, address  _nftaddress, uint256  _nftId) onlyOwner`\
+Vault is responsible for in-game NFT/token storing/purchasing.
 
-Set the owner of a not owned NFT to a user, later the user can unlock the NFT itself.\
-
-`_newOwner`: the owner of this NFT.\
-
-`_nftaddress`: NFT contract address;\
-
-`_nftId`: NFT corresponding token id.\
-
-emit `DistributeAsset(_newOwner, _nftAddress, _nftId)`
-
--   `pay(uint256 _saleId)`\
-
-Payment for certain item.\
-
-`_saleId`: an id used for certain `SaleInfo`:\
-
-```
+```solidity
 struct  SaleInfo {
 	address nftAddress;
 	uint256 nftId;
@@ -77,55 +63,99 @@ struct  SaleInfo {
 }
 ```
 
-`nftAddress`: NFT contract address;\
+### Public variables
 
-`nftId`: NFT token id;\
+`address pocket`: address for recieving money.
 
-`tokenAddress`: payment token address;\
+`uint256 saleInfoId`: next assigning sale ID.
 
-`amount`: listed price;\
+### Functions
 
-emit `Pay(saleId, nftAddress, nftId, tokenAddress, amount)`\
+-   `setupSale(address _nftaddress, uint256 _nftId, address _token, uint256 _amount) onlyOwner`
 
--   `lockToken(address _token, uint256 _amount)`\
+emit `SaleSetup(saleInfoId, _nftAddress, _nftId, _token, _amount)`
 
-Import token to game.\
+Setup the sale price for each un-initalized NFT stored in the contract.
 
-`_token`: token contract address;\
+`_nftaddress`: NFT contract address;
 
-`_amount`: the amount of token.\
+`_nftId`: NFT corresponding token id;
+
+`_token`: token address used for payment;
+
+`_amount`: price;
+
+`saleInfoId`: an ID assigned to this NFT's `SaleInfo`.
+
+-   `distributeAsset(address  _newOwner, address  _nftaddress, uint256  _nftId) onlyOwner`
+
+emit `DistributeAsset(_newOwner, _nftAddress, _nftId)`
+
+Set the owner of a not owned NFT to a user, later the user can unlock the NFT itself.
+
+`_newOwner`: the owner of this NFT.
+
+`_nftaddress`: NFT contract address;
+
+`_nftId`: NFT corresponding token id.
+
+-   `pay(uint256 _saleId)`
+
+emit `Pay(saleId, nftAddress, nftId, tokenAddress, amount)`
+
+Payment for certain item.
+
+`_saleId`: an id used for certain `SaleInfo`:
+
+`nftAddress`: NFT contract address;
+
+`nftId`: NFT token id;
+
+`tokenAddress`: payment token address;
+
+`amount`: listed price;
+
+-   `lockToken(address _token, uint256 _amount)`
 
 emit `LockToken(msg.sender, _token, _amount)`
 
--   `unlockToken(address _token, uint256 _amount)`\
+Import token to game.
 
-Export token to wallet which imported the token, can only be called by the token owner.\
+`_token`: token contract address;
 
-`_token`: NFT contract address;\
+`_amount`: the amount of token.
 
-`_amount`: the amount of token.\
+-   `unlockToken(address _token, uint256 _amount)`
 
 emit `UnlockToken(msg.sender, _token, _amount)`
 
--   `lockAsset(address _nftAddress, uint256 _nftId)`\
+Export token to wallet which imported the token, can only be called by the token owner.
 
-Import NFT to game.\
+`_token`: NFT contract address;
 
-`_nftAddress`: NFT contract address;\
+`_amount`: the amount of token.
 
-`_nftId`: NFT corresponding token id.\
+-   `lockAsset(address _nftAddress, uint256 _nftId)`
 
 emit `LockAsset(msg.sender, _nftAddress, _nftId)`
 
--   `unlockAsset(address _nftAddress, uint256 _nftId)`\
+Import NFT to game.
 
-Export NFT to wallet which imported the NFT, can only be called by the NFT owner.\
+`_nftAddress`: NFT contract address;
 
-`_nftAddress`: NFT contract address;\
+`_nftId`: NFT corresponding token id.
 
-`_nftId`: NFT corresponding token id.\
+-   `unlockAsset(address _nftAddress, uint256 _nftId)`
 
 emit `UnlockAsset(msg.sender, _nftAddress, _nftId)`
+
+Export NFT to wallet which imported the NFT, can only be called by the NFT owner.
+
+`_nftAddress`: NFT contract address;
+
+`_nftId`: NFT corresponding token id.
+
+
 
 ## NFT lifecycle:
 

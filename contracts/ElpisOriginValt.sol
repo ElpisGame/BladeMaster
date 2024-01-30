@@ -12,6 +12,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
 
+    event SaleSetup(
+        uint256 indexed saleInfoId,
+        address indexed nftAddress,
+        uint256 indexed nftId,
+        address tokenAddress,
+        uint256 price
+    );
+
     event DistributeAsset(
         address indexed owner,
         address indexed nftAddress,
@@ -59,8 +67,10 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
 
     address public pocket;
 
-    uint256 public saleInfoId;
+    uint256 public saleInfoId = 1;
     mapping(uint256 => SaleInfo) public saleInfos;
+    // nftAddress[nftId] => saleInfId
+    mapping(address => mapping(uint256 => uint256)) public nftToSaleInfo;
 
     // user address => token address => locked amount
     mapping(address => mapping(address => uint256)) public lockedToken;
@@ -80,9 +90,11 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
         pocket = _newPocket;
     }
 
-    function setupSale(address _nftaddress, uint256 _nftId, address _token, uint256 _amount) public onlyOwner {
-        require(IERC721(_nftaddress).ownerOf(_nftId) == address(this), "ElpisOriginValt: missing the nft");
-        saleInfos[saleInfoId] = SaleInfo(_nftaddress, _nftId, _token, _amount);
+    function setupSale(address _nftAddress, uint256 _nftId, address _token, uint256 _amount) public onlyOwner {
+        require(IERC721(_nftAddress).ownerOf(_nftId) == address(this), "ElpisOriginValt: missing the nft");
+        saleInfos[saleInfoId] = SaleInfo(_nftAddress, _nftId, _token, _amount);
+        nftToSaleInfo[_nftAddress][_nftId] = saleInfoId;
+        emit SaleSetup(saleInfoId, _nftAddress, _nftId, _token, _amount);
         ++saleInfoId;
     }
 
@@ -91,13 +103,15 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
             lockedAssets[_nftAddress][_nftId] == address(0),
             "ElpisOriginValt: token has owner"
         );
+        saleInfos[nftToSaleInfo[_nftAddress][_nftId]] = SaleInfo(address(0), 0, address(0), 0);
+        nftToSaleInfo[_nftAddress][_nftId] = 0;
         IERC721(_nftAddress).safeTransferFrom(address(this), msg.sender, _nftId);
     }
 
-    function distributeAsset(address _newOwner, address _nftaddress, uint256 _nftId) public onlyOwner {
-        require(lockedAssets[_nftaddress][_nftId] == address(0), "ElpisOriginValt: nft not available");
-        lockedAssets[_nftaddress][_nftId] = _newOwner;
-        emit DistributeAsset(_newOwner, _nftaddress, _nftId);
+    function distributeAsset(address _newOwner, address _nftAddress, uint256 _nftId) public onlyOwner {
+        require(lockedAssets[_nftAddress][_nftId] == address(0), "ElpisOriginValt: nft not available");
+        lockedAssets[_nftAddress][_nftId] = _newOwner;
+        emit DistributeAsset(_newOwner, _nftAddress, _nftId);
     }
 
     function pay(uint256 saleId) public {
