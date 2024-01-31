@@ -31,7 +31,8 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
         address indexed nftAddress,
         uint256 indexed nftId,
         address tokenAddress,
-        uint256 price
+        uint256 price,
+        address payerAddress
     );
 
     event LockToken(
@@ -92,10 +93,16 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
 
     function setupSale(address _nftAddress, uint256 _nftId, address _token, uint256 _amount) public onlyOwner {
         require(IERC721(_nftAddress).ownerOf(_nftId) == address(this), "ElpisOriginValt: missing the nft");
-        saleInfos[saleInfoId] = SaleInfo(_nftAddress, _nftId, _token, _amount);
-        nftToSaleInfo[_nftAddress][_nftId] = saleInfoId;
-        emit SaleSetup(saleInfoId, _nftAddress, _nftId, _token, _amount);
-        ++saleInfoId;
+        if (nftToSaleInfo[_nftAddress][_nftId] == 0) {
+            saleInfos[saleInfoId] = SaleInfo(_nftAddress, _nftId, _token, _amount);
+            nftToSaleInfo[_nftAddress][_nftId] = saleInfoId;
+            emit SaleSetup(saleInfoId, _nftAddress, _nftId, _token, _amount);
+            ++saleInfoId;
+        }
+        else {
+            saleInfos[nftToSaleInfo[_nftAddress][_nftId]] = SaleInfo(_nftAddress, _nftId, _token, _amount);
+            emit SaleSetup(nftToSaleInfo[_nftAddress][_nftId], _nftAddress, _nftId, _token, _amount);
+        }
     }
 
     function withdrawAsset(address _nftAddress, uint256 _nftId) public onlyOwner {
@@ -117,7 +124,7 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
     function pay(uint256 saleId) public {
         IERC20(saleInfos[saleId].tokenAddress).transferFrom(msg.sender, address(this), saleInfos[saleId].amount);
         IERC721(saleInfos[saleId].nftAddress).transferFrom(address(this), msg.sender, saleInfos[saleId].nftId);
-        emit Pay(saleId, saleInfos[saleId].nftAddress, saleInfos[saleId].nftId, saleInfos[saleId].tokenAddress, saleInfos[saleId].amount);
+        emit Pay(saleId, saleInfos[saleId].nftAddress, saleInfos[saleId].nftId, saleInfos[saleId].tokenAddress, saleInfos[saleId].amount, msg.sender);
         saleInfos[saleId] = SaleInfo(address(0), 0, address(0), 0);
     }
 

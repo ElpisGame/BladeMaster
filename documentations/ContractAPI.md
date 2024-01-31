@@ -101,7 +101,7 @@ Set the owner of a not owned NFT to a user, later the user can unlock the NFT it
 
 -   `pay(uint256 _saleId)`
 
-emit `Pay(saleId, nftAddress, nftId, tokenAddress, amount)`
+emit `Pay(_saleId, nftAddress, nftId, tokenAddress, amount, payerAddress)`
 
 Payment for certain item.
 
@@ -114,6 +114,8 @@ Payment for certain item.
 `tokenAddress`: payment token address;
 
 `amount`: listed price;
+
+`payerAddress`: user who purchased the NFT.
 
 -   `lockToken(address _token, uint256 _amount)`
 
