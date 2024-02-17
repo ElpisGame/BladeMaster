@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 // import "hardhat/console.sol";
 
-contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
+contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgradeable {
 
     event SaleSetup(
         uint256 indexed saleInfoId,
@@ -68,7 +68,7 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
 
     address public pocket;
 
-    uint256 public saleInfoId = 1;
+    uint256 public saleInfoId;
     mapping(uint256 => SaleInfo) public saleInfos;
     // nftAddress[nftId] => saleInfId
     mapping(address => mapping(uint256 => uint256)) public nftToSaleInfo;
@@ -78,8 +78,12 @@ contract ElpisOriginValt is ERC165, IERC721Receiver, Ownable {
     // nft address => nft id => user address
     mapping(address => mapping(uint256 => address)) public lockedAssets;
 
-    constructor(address _pocket, address _owner) Ownable(_owner) {
+    uint256[50] __gap;
+
+    function initialize(address _pocket, address _owner) public initializer {
+        __Ownable_init(_owner);
         pocket = _pocket;
+        saleInfoId = 1;
     }
 
     function withdrawFund(address _token, uint256 _amount) public {

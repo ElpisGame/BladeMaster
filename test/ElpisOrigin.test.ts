@@ -4,7 +4,7 @@ import {
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
-import { ethers, network } from "hardhat";
+import { ethers, network, upgrades } from "hardhat";
 import { Signer } from "ethers";
 
 import {
@@ -12,10 +12,14 @@ import {
     ElpisOriginAsset721A__factory,
     ElpisOriginMarket,
     ElpisOriginMarket__factory,
-    ElpisOriginValt,
-    ElpisOriginValt__factory,
+    ElpisOriginVault,
+    ElpisOriginVault__factory,
     ElpisOriginSubToken,
     ElpisOriginSubToken__factory,
+    TransparentUpgradeableProxy,
+    TransparentUpgradeableProxy__factory,
+    ProxyAdmin,
+    ProxyAdmin__factory,
 } from "../typechain-types";
 
 const ONE_ETH = ethers.parseEther("1");
@@ -29,14 +33,18 @@ describe("Elpis Origin", function () {
     let signer1Addr: string;
     let randomAddress: string;
 
+    let proxyAdmin: ProxyAdmin;
+
     let asset: ElpisOriginAsset721A;
     let token: ElpisOriginSubToken;
     let market: ElpisOriginMarket;
-    let vault: ElpisOriginValt;
+    // let vaultImplementation: ElpisOriginVault;
+    let vaultProxy: ElpisOriginVault;
     let assetAddress: string;
     let tokenAddress: string;
     let marketAddress: string;
-    let vaultAddress: string;
+    // let vaultImpAddress: string;
+    let vaultProxyAddress: string;
 
     const initialTokenId = 0;
 
@@ -57,14 +65,23 @@ describe("Elpis Origin", function () {
         tokenAddress = await token.getAddress();
         market = await new ElpisOriginMarket__factory(deployer).deploy();
         marketAddress = await market.getAddress();
-        vault = await new ElpisOriginValt__factory(deployer).deploy(
-            randomAddress,
-            deployerAddr
+
+        let vaultImplementation = await new ElpisOriginVault__factory(
+            deployer
+        ).deploy();
+        let vaultImpAddress = await vaultImplementation.getAddress();
+        let proxy = await new TransparentUpgradeableProxy__factory(
+            deployer
+        ).deploy(vaultImpAddress, deployerAddr, "0x");
+        vaultProxyAddress = await proxy.getAddress();
+        vaultProxy = ElpisOriginVault__factory.connect(
+            vaultProxyAddress,
+            deployer
         );
-        vaultAddress = await vault.getAddress();
+        await vaultProxy.initialize(randomAddress, deployerAddr);
         asset = await new ElpisOriginAsset721A__factory(deployer).deploy(
             deployerAddr,
-            vaultAddress,
+            vaultProxyAddress,
             "Elpis NFT",
             "NFT",
             "Token-URI"
@@ -72,7 +89,7 @@ describe("Elpis Origin", function () {
         assetAddress = await asset.getAddress();
 
         // set approvals
-        asset.setApprovalForAll(vaultAddress, true);
+        asset.setApprovalForAll(vaultProxyAddress, true);
         asset.setApprovalForAll(marketAddress, true);
 
         // mint one NFT
@@ -132,7 +149,8 @@ describe("Elpis Origin", function () {
             );
             expect(await asset.hasRole(minterRole, deployerAddr)).to.be.true;
             expect(await asset.hasRole(adminRole, deployerAddr)).to.be.true;
-            expect(await asset.hasRole(adminRole, vaultAddress)).to.be.true;
+            expect(await asset.hasRole(adminRole, vaultProxyAddress)).to.be
+                .true;
             expect(await asset.hasRole(minterRole, signer1Addr)).to.be.false;
             await expect(asset.grantRole(minterRole, signer1Addr))
                 .to.emit(asset, "RoleGranted")
@@ -180,9 +198,9 @@ describe("Elpis Origin", function () {
         it("Pay", async function () {
             // setup SaleInfo
             const nextTokenId = await asset.nextTokenId();
-            const nextSaleId = await vault.saleInfoId();
-            await asset.mintAsset(vaultAddress, "");
-            await vault.setupSale(
+            const nextSaleId = await vaultProxy.saleInfoId();
+            await asset.mintAsset(vaultProxyAddress, "");
+            await vaultProxy.setupSale(
                 assetAddress,
                 nextTokenId,
                 tokenAddress,
@@ -190,64 +208,72 @@ describe("Elpis Origin", function () {
             );
 
             // #region: pay method
-            const initialBalance = await token.balanceOf(vaultAddress);
-            await token.approve(vaultAddress, ethers.MaxUint256);
-            await expect(vault.pay(nextSaleId))
-                .to.emit(vault, "Pay")
+            const initialBalance = await token.balanceOf(vaultProxyAddress);
+            await token.approve(vaultProxyAddress, ethers.MaxUint256);
+            await expect(vaultProxy.pay(nextSaleId))
+                .to.emit(vaultProxy, "Pay")
                 .withArgs(
                     nextSaleId,
                     assetAddress,
                     nextTokenId,
                     tokenAddress,
-                    ONE_ETH
+                    ONE_ETH,
+                    deployerAddr
                 );
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(
+            expect(await token.balanceOf(vaultProxyAddress)).to.be.equal(
                 initialBalance + ONE_ETH
             );
 
-            await vault.withdrawFund(tokenAddress, initialBalance + ONE_ETH);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(0n);
+            await vaultProxy.withdrawFund(
+                tokenAddress,
+                initialBalance + ONE_ETH
+            );
+            expect(await token.balanceOf(vaultProxyAddress)).to.be.equal(0n);
             // #endregion
         });
 
         it("Lock/unlock", async function () {
-            const initialBalance = await asset.balanceOf(vaultAddress);
-            await token.approve(vaultAddress, ethers.MaxUint256);
+            const initialBalance = await asset.balanceOf(vaultProxyAddress);
+            await token.approve(vaultProxyAddress, ethers.MaxUint256);
 
             // #region: token lock/unlock
-            await expect(vault.lockToken(tokenAddress, ONE_ETH))
-                .to.emit(vault, "LockToken")
+            await expect(vaultProxy.lockToken(tokenAddress, ONE_ETH))
+                .to.emit(vaultProxy, "LockToken")
                 .withArgs(deployerAddr, tokenAddress, ONE_ETH);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(ONE_ETH);
+            expect(await token.balanceOf(vaultProxyAddress)).to.be.equal(
+                ONE_ETH
+            );
 
             // fail case: withdraw exceeded amount
             await expect(
-                vault.unlockToken(tokenAddress, TWO_ETH)
+                vaultProxy.unlockToken(tokenAddress, TWO_ETH)
             ).to.be.revertedWith("ElpisOriginValt: exceed max amount");
 
-            await expect(vault.unlockToken(tokenAddress, ONE_ETH))
-                .to.emit(vault, "UnlockToken")
+            await expect(vaultProxy.unlockToken(tokenAddress, ONE_ETH))
+                .to.emit(vaultProxy, "UnlockToken")
                 .withArgs(deployerAddr, tokenAddress, ONE_ETH);
-            expect(await token.balanceOf(vaultAddress)).to.be.equal(0n);
+            expect(await token.balanceOf(vaultProxyAddress)).to.be.equal(0n);
             // #endregion
 
             // #region: asset lock/unlock
-            await expect(vault.lockAsset(assetAddress, initialTokenId))
-                .to.emit(vault, "LockAsset")
+            await expect(vaultProxy.lockAsset(assetAddress, initialTokenId))
+                .to.emit(vaultProxy, "LockAsset")
                 .withArgs(deployerAddr, assetAddress, initialTokenId);
-            expect(await asset.balanceOf(vaultAddress)).to.be.equal(
+            expect(await asset.balanceOf(vaultProxyAddress)).to.be.equal(
                 initialBalance + 1n
             );
 
             // fail case: unlock someone else's asset
             await expect(
-                vault.connect(signer1).unlockAsset(assetAddress, initialTokenId)
+                vaultProxy
+                    .connect(signer1)
+                    .unlockAsset(assetAddress, initialTokenId)
             ).to.be.revertedWith("ElpisOriginValt: not the owner");
 
-            await expect(vault.unlockAsset(assetAddress, initialTokenId))
-                .to.emit(vault, "UnlockAsset")
+            await expect(vaultProxy.unlockAsset(assetAddress, initialTokenId))
+                .to.emit(vaultProxy, "UnlockAsset")
                 .withArgs(deployerAddr, assetAddress, initialTokenId);
-            expect(await asset.balanceOf(vaultAddress)).to.be.equal(
+            expect(await asset.balanceOf(vaultProxyAddress)).to.be.equal(
                 initialBalance
             );
             // #endregion
@@ -256,15 +282,19 @@ describe("Elpis Origin", function () {
         it("Asset distribution", async function () {
             const initialBalance = await asset.balanceOf(deployerAddr);
             const nextTokenId = await asset.nextTokenId();
-            await asset.mintAsset(vaultAddress, "");
+            await asset.mintAsset(vaultProxyAddress, "");
             await expect(
-                vault.distributeAsset(deployerAddr, assetAddress, nextTokenId)
+                vaultProxy.distributeAsset(
+                    deployerAddr,
+                    assetAddress,
+                    nextTokenId
+                )
             )
-                .to.emit(vault, "DistributeAsset")
+                .to.emit(vaultProxy, "DistributeAsset")
                 .withArgs(deployerAddr, assetAddress, nextTokenId);
 
-            await expect(vault.unlockAsset(assetAddress, nextTokenId))
-                .to.emit(vault, "UnlockAsset")
+            await expect(vaultProxy.unlockAsset(assetAddress, nextTokenId))
+                .to.emit(vaultProxy, "UnlockAsset")
                 .withArgs(deployerAddr, assetAddress, nextTokenId);
             expect(await asset.balanceOf(deployerAddr)).to.be.equal(
                 initialBalance + 1n
