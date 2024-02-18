@@ -16,10 +16,12 @@ import {
     ElpisOriginVault__factory,
     ElpisOriginSubToken,
     ElpisOriginSubToken__factory,
-    TransparentUpgradeableProxy,
-    TransparentUpgradeableProxy__factory,
+    // TransparentUpgradeableProxy,
+    // TransparentUpgradeableProxy__factory,
+    ElpisOriginProxy__factory,
     ProxyAdmin,
     ProxyAdmin__factory,
+    ProxyTest__factory,
 } from "../typechain-types";
 
 const ONE_ETH = ethers.parseEther("1");
@@ -33,7 +35,8 @@ describe("Elpis Origin", function () {
     let signer1Addr: string;
     let randomAddress: string;
 
-    let proxyAdmin: ProxyAdmin;
+    let vaultProxyAdmin: ProxyAdmin;
+    let vaultProxyAdminAddress: string;
 
     let asset: ElpisOriginAsset721A;
     let token: ElpisOriginSubToken;
@@ -70,15 +73,23 @@ describe("Elpis Origin", function () {
             deployer
         ).deploy();
         let vaultImpAddress = await vaultImplementation.getAddress();
-        let proxy = await new TransparentUpgradeableProxy__factory(
+        let proxy = await new ElpisOriginProxy__factory(deployer).deploy(
+            vaultImpAddress,
+            deployerAddr,
+            "0x"
+        );
+        vaultProxyAdminAddress = await proxy.proxyAdmin();
+        vaultProxyAdmin = ProxyAdmin__factory.connect(
+            vaultProxyAdminAddress,
             deployer
-        ).deploy(vaultImpAddress, deployerAddr, "0x");
+        );
         vaultProxyAddress = await proxy.getAddress();
         vaultProxy = ElpisOriginVault__factory.connect(
             vaultProxyAddress,
             deployer
         );
         await vaultProxy.initialize(randomAddress, deployerAddr);
+
         asset = await new ElpisOriginAsset721A__factory(deployer).deploy(
             deployerAddr,
             vaultProxyAddress,
@@ -195,6 +206,22 @@ describe("Elpis Origin", function () {
     });
 
     describe("Vault", function () {
+        it("Upgradeability", async function () {
+            // test contract upgrade
+            const nextSaleId = await vaultProxy.saleInfoId();
+            let testProxyContractImp = await new ProxyTest__factory(
+                deployer
+            ).deploy();
+
+            expect(await vaultProxy.saleInfoId()).to.be.equal(nextSaleId);
+            await vaultProxyAdmin.upgradeAndCall(
+                vaultProxyAddress,
+                await testProxyContractImp.getAddress(),
+                "0x"
+            );
+            expect(await vaultProxy.saleInfoId()).to.be.equal(123n);
+        });
+
         it("Pay", async function () {
             // setup SaleInfo
             const nextTokenId = await asset.nextTokenId();
