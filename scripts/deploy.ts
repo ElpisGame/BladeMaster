@@ -8,16 +8,17 @@ import {
     ElpisOriginVault__factory,
     ElpisOriginSubToken,
     ElpisOriginSubToken__factory,
-    // TransparentUpgradeableProxy,
-    // TransparentUpgradeableProxy__factory,
     ElpisOriginProxy__factory,
     ProxyAdmin,
     ProxyAdmin__factory,
     ProxyTest__factory,
 } from "../typechain-types";
 
-const testAccount = "0x9Ac48F8C16eB094B9432aE7FdDa7002Ef611d096";
 const ELPIS_ASSET_ADDRESS = "0x6B8a176Ab8e37dF3542fb34030Be66229a1361da";
+
+// new deployment
+const GNOSIS_ACCOUNT = "0x8DCa84A08e7E585D7DC5b7079D53fd3BBFb07c65";
+const VAULT_OWNER = "0x197F023713dF6aa83653167652826C689Ce6C90d";
 
 async function main() {
     const [deployer] = await ethers.getSigners();
@@ -46,22 +47,34 @@ async function main() {
         vaultProxyAddress,
         deployer
     );
-    await vaultProxy.initialize(deployerAddr, deployerAddr);
+    await vaultProxy.initialize(GNOSIS_ACCOUNT, VAULT_OWNER);
 
     // let proxyAdmin = ProxyAdmin__factory.connect(
     //     vaultProxyAdminAddress,
     //     deployer
     // );
 
-    let elpisAsset = ElpisOriginAsset721A__factory.connect(
-        ELPIS_ASSET_ADDRESS,
-        deployer
-    );
-    await elpisAsset.mintAssetBatch(vaultProxyAddress, 10);
+    const isTesting = false;
+    if (isTesting) {
+        let elpisAsset = ElpisOriginAsset721A__factory.connect(
+            ELPIS_ASSET_ADDRESS,
+            deployer
+        );
+        await elpisAsset.mintAssetBatch(vaultProxyAddress, 10);
+    } else {
+        let elpisAsset = await new ElpisOriginAsset721A__factory(
+            deployer
+        ).deploy(
+            GNOSIS_ACCOUNT,
+            vaultProxyAddress,
+            "ELPIS ORIGIN CHARACTER",
+            "ELOC",
+            "https://assets.elpisgame.io/nfts/origin/nft_{id}.json"
+        );
+        console.log("Elpis Asset address: ", await elpisAsset.getAddress());
+    }
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
     console.error(error);
     process.exitCode = 1;

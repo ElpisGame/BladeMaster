@@ -16,8 +16,6 @@ import {
     ElpisOriginVault__factory,
     ElpisOriginSubToken,
     ElpisOriginSubToken__factory,
-    // TransparentUpgradeableProxy,
-    // TransparentUpgradeableProxy__factory,
     ElpisOriginProxy__factory,
     ProxyAdmin,
     ProxyAdmin__factory,
@@ -41,12 +39,10 @@ describe("Elpis Origin", function () {
     let asset: ElpisOriginAsset721A;
     let token: ElpisOriginSubToken;
     let market: ElpisOriginMarket;
-    // let vaultImplementation: ElpisOriginVault;
     let vaultProxy: ElpisOriginVault;
     let assetAddress: string;
     let tokenAddress: string;
     let marketAddress: string;
-    // let vaultImpAddress: string;
     let vaultProxyAddress: string;
 
     const initialTokenId = 0;
