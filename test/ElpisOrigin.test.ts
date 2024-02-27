@@ -222,13 +222,25 @@ describe("Elpis Origin", function () {
             // setup SaleInfo
             const nextTokenId = await asset.nextTokenId();
             const nextSaleId = await vaultProxy.saleInfoId();
-            await asset.mintAsset(vaultProxyAddress, "");
-            await vaultProxy.setupSale(
-                assetAddress,
-                nextTokenId,
-                tokenAddress,
-                ONE_ETH
-            );
+            await asset.mintAssetBatch(vaultProxyAddress, 10);
+            for (let i = 0; i < 5; ++i) {
+                await expect(
+                    vaultProxy.setupSale(
+                        assetAddress,
+                        nextTokenId + BigInt(i),
+                        tokenAddress,
+                        ONE_ETH
+                    )
+                )
+                    .to.emit(vaultProxy, "SaleSetup")
+                    .withArgs(
+                        nextSaleId + BigInt(i),
+                        assetAddress,
+                        nextTokenId + BigInt(i),
+                        tokenAddress,
+                        ONE_ETH
+                    );
+            }
 
             // #region: pay method
             const initialBalance = await token.balanceOf(vaultProxyAddress);

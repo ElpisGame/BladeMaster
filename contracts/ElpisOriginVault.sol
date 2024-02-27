@@ -96,7 +96,6 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
     }
 
     function setupSale(address _nftAddress, uint256 _nftId, address _token, uint256 _amount) public onlyOwner {
-        require(IERC721(_nftAddress).ownerOf(_nftId) == address(this), "ElpisOriginValt: missing the nft");
         if (nftToSaleInfo[_nftAddress][_nftId] == 0) {
             saleInfos[saleInfoId] = SaleInfo(_nftAddress, _nftId, _token, _amount);
             nftToSaleInfo[_nftAddress][_nftId] = saleInfoId;
