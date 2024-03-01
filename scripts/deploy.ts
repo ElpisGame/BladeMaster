@@ -23,7 +23,7 @@ const VAULT_OWNER = "0x197F023713dF6aa83653167652826C689Ce6C90d";
 async function main() {
     const [deployer] = await ethers.getSigners();
     const deployerAddr = await deployer.getAddress();
-    console.log(deployerAddr);
+    console.log("deployerAddr :", deployerAddr);
 
     let vaultImplementation = await new ElpisOriginVault__factory(
         deployer
@@ -34,7 +34,7 @@ async function main() {
 
     let proxy = await new ElpisOriginProxy__factory(deployer).deploy(
         vaultImpAddress,
-        deployerAddr,
+        GNOSIS_ACCOUNT,
         "0x"
     );
     await proxy.waitForDeployment();
