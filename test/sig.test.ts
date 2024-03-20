@@ -48,6 +48,7 @@ describe("Elpis Origin", function () {
             )
         );
         console.log("message :", message3);
+        console.log("array: ", ethers.toBeArray(message3));
         console.log("signature :", signature3);
         console.log(
             "verify3: ",
