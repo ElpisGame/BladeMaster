@@ -16,8 +16,8 @@
 | Contract    | Address                                    |
 | ----------- | ------------------------------------------ |
 | USDT        | 0xc2132d05d31c914a87c6611c10748aeb04b58e8f |
-| NFT         | 0xcd8B5092A9E1FB69Bc5cA3E4F193007fC2465cfd |
-| Vault Imp   | 0xBe27f7443f8F10486a3cA50711392b3787f88cf8 | 
+| NFT - Character | 0xcd8B5092A9E1FB69Bc5cA3E4F193007fC2465cfd |
+| Vault Imp   | 0xBe27f7443f8F10486a3cA50711392b3787f88cf8 |
 | Vault Proxy | 0xf2E2628997DA78AFf2a7692810F786b4Fe4E1811 |
 | Vault Proxy Admin | 0x3033AeB6c1A8F3f98D6801Cf30250d92d6694FFb |
 | Vault Admin | 0x197F023713dF6aa83653167652826C689Ce6C90d |

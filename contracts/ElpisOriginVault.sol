@@ -143,10 +143,10 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
         saleInfos[saleId] = SaleInfo(address(0), 0, address(0), 0);
     }
 
-    function payWithSig(address _nftAddress, uint256 _nftId, address _token, uint256 _amount, bytes calldata signature) public {
+    function payWithSig(address _nftAddress, uint256 _nftId, address _token, uint256 _amount, bytes calldata _signature) public {
         bytes32 hash = keccak256(abi.encodePacked(_nftAddress, _nftId, _token, _amount));
         bytes32 prefixedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-        require (owner() == prefixedHash.recover(signature), "ElpisOriginValt: invalid signature");
+        require (owner() == prefixedHash.recover(_signature), "ElpisOriginValt: invalid signature");
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         IERC721(_nftAddress).transferFrom(address(this), msg.sender, _nftId);
         emit PayWithSig(msg.sender, _nftAddress, _nftId, _token, _amount);
@@ -186,10 +186,10 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
         emit UnlockAsset(msg.sender, _nftAddress, _nftId);
     }
 
-    function unlockAssetWithSig(address _nftAddress, uint256 _nftId, bytes calldata signature) public {
+    function unlockAssetWithSig(address _nftAddress, uint256 _nftId, bytes calldata _signature) public {
         bytes32 hash = keccak256(abi.encodePacked(msg.sender, _nftAddress, _nftId));
         bytes32 prefixedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-        require (owner() == prefixedHash.recover(signature), "ElpisOriginValt: invalid signature");
+        require (owner() == prefixedHash.recover(_signature), "ElpisOriginValt: invalid signature");
         IERC721(_nftAddress).safeTransferFrom(
             address(this),
             msg.sender,

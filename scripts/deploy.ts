@@ -29,7 +29,7 @@ async function main() {
     if (isTesting) {
         testNftAddress = "0x6B8a176Ab8e37dF3542fb34030Be66229a1361da";
         generalAdmin = "0x9Ac48F8C16eB094B9432aE7FdDa7002Ef611d096";
-        vaultOwner = "0x03A65893283C70beC8AC0F6b515Fc40042ce2091";
+        vaultOwner = "0x197F023713dF6aa83653167652826C689Ce6C90d";
     } else {
         generalAdmin = "0x8DCa84A08e7E585D7DC5b7079D53fd3BBFb07c65";
         vaultOwner = "0x197F023713dF6aa83653167652826C689Ce6C90d";

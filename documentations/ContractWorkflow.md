@@ -2,6 +2,13 @@
 
 ## Purchase Process
 
+###### *ElpisOriginVault.sol*
+
+1. Approve USDT by calling`USDT:approve(ElpisOriginVault, MAX_UINT256)`, this step needs to be done **once** for every new user.
+2. Purchase the NFT by calling `payWithSig(nftAddress, nftId, tokenAddress, price, signature)`, `signature` is generated through signing encoded message of `nftAddress, nftId, tokenAddress, price` by the vault owner.
+
+## Purchase Process (deprecated)
+
 ###### _ElpisOriginVault.sol_
 
 NFT purchases in the game are completed in two phases:
