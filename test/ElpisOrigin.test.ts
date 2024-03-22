@@ -218,7 +218,76 @@ describe("Elpis Origin", function () {
             expect(await vaultProxy.saleInfoId()).to.be.equal(123n);
         });
 
-        it("Pay", async function () {
+        it("Pay through signature verification", async function () {
+            // setup SaleInfo
+            const nextTokenId = await asset.nextTokenId();
+            const nextSaleId = await vaultProxy.saleInfoId();
+            await asset.mintAssetBatch(vaultProxyAddress, 10);
+
+            // #region: pay method
+            const initialBalance = await token.balanceOf(vaultProxyAddress);
+            await token.approve(vaultProxyAddress, ethers.MaxUint256);
+
+            let message = ethers.solidityPackedKeccak256(
+                ["uint256", "address", "uint256", "address", "uint256"],
+                [nextSaleId, assetAddress, nextTokenId, tokenAddress, ONE_ETH]
+            );
+            let signature = await deployer.signMessage(
+                ethers.toBeArray(message)
+            );
+
+            // fail case: mismatch encoded message
+            await expect(
+                vaultProxy.payWithSig(
+                    assetAddress,
+                    nextTokenId + 1n,
+                    tokenAddress,
+                    ONE_ETH,
+                    signature
+                )
+            ).to.be.revertedWith("ElpisOriginVault: invalid signature");
+
+            await expect(
+                vaultProxy.payWithSig(
+                    assetAddress,
+                    nextTokenId,
+                    tokenAddress,
+                    ONE_ETH,
+                    signature
+                )
+            )
+                .to.emit(vaultProxy, "PayWithSig")
+                .withArgs(
+                    deployerAddr,
+                    assetAddress,
+                    nextTokenId,
+                    tokenAddress,
+                    ONE_ETH
+                );
+            expect(await token.balanceOf(vaultProxyAddress)).to.be.equal(
+                initialBalance + ONE_ETH
+            );
+
+            await vaultProxy.withdrawFund(
+                tokenAddress,
+                initialBalance + ONE_ETH
+            );
+            expect(await token.balanceOf(vaultProxyAddress)).to.be.equal(0n);
+            // #endregion
+
+            // fail case: used sale id
+            await expect(
+                vaultProxy.payWithSig(
+                    assetAddress,
+                    nextTokenId,
+                    tokenAddress,
+                    ONE_ETH,
+                    signature
+                )
+            ).to.be.revertedWith("ElpisOriginVault: invalid signature");
+        });
+
+        it("Pay through sale setup", async function () {
             // setup SaleInfo
             const nextTokenId = await asset.nextTokenId();
             const nextSaleId = await vaultProxy.saleInfoId();
@@ -282,7 +351,7 @@ describe("Elpis Origin", function () {
             // fail case: withdraw exceeded amount
             await expect(
                 vaultProxy.unlockToken(tokenAddress, TWO_ETH)
-            ).to.be.revertedWith("ElpisOriginValt: exceed max amount");
+            ).to.be.revertedWith("ElpisOriginVault: exceed max amount");
 
             await expect(vaultProxy.unlockToken(tokenAddress, ONE_ETH))
                 .to.emit(vaultProxy, "UnlockToken")
@@ -303,7 +372,7 @@ describe("Elpis Origin", function () {
                 vaultProxy
                     .connect(signer1)
                     .unlockAsset(assetAddress, initialTokenId)
-            ).to.be.revertedWith("ElpisOriginValt: not the owner");
+            ).to.be.revertedWith("ElpisOriginVault: not the owner");
 
             await expect(vaultProxy.unlockAsset(assetAddress, initialTokenId))
                 .to.emit(vaultProxy, "UnlockAsset")

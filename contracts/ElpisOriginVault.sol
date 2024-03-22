@@ -102,7 +102,7 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
 
     // Owner functions
     function setPocketAddress(address _newPocket) public onlyOwner {
-        require(_newPocket != address(0), "ElpisOriginValt: cannot set pocket to address zero");
+        require(_newPocket != address(0), "ElpisOriginVault: cannot set pocket to address zero");
         pocket = _newPocket;
     }
 
@@ -122,7 +122,7 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
     function withdrawAsset(address _nftAddress, uint256 _nftId) public onlyOwner {
         require(
             lockedAssets[_nftAddress][_nftId] == address(0),
-            "ElpisOriginValt: token has owner"
+            "ElpisOriginVault: token has owner"
         );
         saleInfos[nftToSaleInfo[_nftAddress][_nftId]] = SaleInfo(address(0), 0, address(0), 0);
         nftToSaleInfo[_nftAddress][_nftId] = 0;
@@ -130,7 +130,7 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
     }
 
     function distributeAsset(address _newOwner, address _nftAddress, uint256 _nftId) public onlyOwner {
-        require(lockedAssets[_nftAddress][_nftId] == address(0), "ElpisOriginValt: nft not available");
+        require(lockedAssets[_nftAddress][_nftId] == address(0), "ElpisOriginVault: nft not available");
         lockedAssets[_nftAddress][_nftId] = _newOwner;
         emit DistributeAsset(_newOwner, _nftAddress, _nftId);
     }
@@ -144,12 +144,13 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
     }
 
     function payWithSig(address _nftAddress, uint256 _nftId, address _token, uint256 _amount, bytes calldata _signature) public {
-        bytes32 hash = keccak256(abi.encodePacked(_nftAddress, _nftId, _token, _amount));
+        bytes32 hash = keccak256(abi.encodePacked(saleInfoId, _nftAddress, _nftId, _token, _amount));
         bytes32 prefixedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-        require (owner() == prefixedHash.recover(_signature), "ElpisOriginValt: invalid signature");
+        require (owner() == prefixedHash.recover(_signature), "ElpisOriginVault: invalid signature");
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         IERC721(_nftAddress).transferFrom(address(this), msg.sender, _nftId);
         emit PayWithSig(msg.sender, _nftAddress, _nftId, _token, _amount);
+        ++saleInfoId;
     }
 
     function lockToken(address _token, uint256 _amount) public {
@@ -159,7 +160,7 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
     }
 
     function unlockToken(address _token, uint256 _amount) public {
-        require(_amount <= lockedToken[msg.sender][_token], "ElpisOriginValt: exceed max amount");
+        require(_amount <= lockedToken[msg.sender][_token], "ElpisOriginVault: exceed max amount");
         IERC20(_token).transfer(
             msg.sender,
             _amount
@@ -175,7 +176,7 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
     }
 
     function unlockAsset(address _nftAddress, uint256 _nftId) public {
-        require(msg.sender == lockedAssets[_nftAddress][_nftId], "ElpisOriginValt: not the owner");
+        require(msg.sender == lockedAssets[_nftAddress][_nftId], "ElpisOriginVault: not the owner");
         IERC721(_nftAddress).safeTransferFrom(
             address(this),
             msg.sender,
@@ -187,9 +188,9 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
     }
 
     function unlockAssetWithSig(address _nftAddress, uint256 _nftId, bytes calldata _signature) public {
-        bytes32 hash = keccak256(abi.encodePacked(msg.sender, _nftAddress, _nftId));
+        bytes32 hash = keccak256(abi.encodePacked(saleInfoId, msg.sender, _nftAddress, _nftId));
         bytes32 prefixedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-        require (owner() == prefixedHash.recover(_signature), "ElpisOriginValt: invalid signature");
+        require (owner() == prefixedHash.recover(_signature), "ElpisOriginVault: invalid signature");
         IERC721(_nftAddress).safeTransferFrom(
             address(this),
             msg.sender,
@@ -197,6 +198,7 @@ contract ElpisOriginVault is Initializable, ERC165, IERC721Receiver, OwnableUpgr
         );
         lockedAssets[_nftAddress][_nftId] = address(0);
         IElpisOriginAsset(_nftAddress).updateMetadata(_nftId);
+        ++saleInfoId;
         emit UnlockAsset(msg.sender, _nftAddress, _nftId);
     }
 

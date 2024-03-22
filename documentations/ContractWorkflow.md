@@ -5,7 +5,7 @@
 ###### *ElpisOriginVault.sol*
 
 1. Approve USDT by calling`USDT:approve(ElpisOriginVault, MAX_UINT256)`, this step needs to be done **once** for every new user.
-2. Purchase the NFT by calling `payWithSig(nftAddress, nftId, tokenAddress, price, signature)`, `signature` is generated through signing encoded message of `nftAddress, nftId, tokenAddress, price` by the vault owner.
+2. Purchase the NFT by calling `payWithSig(nftAddress, nftId, tokenAddress, price, signature)`, `signature` is generated through signing encoded message of `saleInfoId, nftAddress, nftId, tokenAddress, price` by the vault owner. `saleInfoId` is an auto-increamenting variable stored inside the contract.
 
 ## Purchase Process (deprecated)
 

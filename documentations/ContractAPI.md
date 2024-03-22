@@ -119,9 +119,11 @@ Payment for certain item.
 
 -   `payWithSig(address _nftaddress, uint256 _nftId, address _token, uint256 _amount, bytes _signature)`
 
-emit `PayWithSig(msg.sender, _nftAddress, _nftId, _tokenAddress, _amount)`
+emit `PayWithSig(saleInfoId, _nftAddress, _nftId, _tokenAddress, _amount)`
 
 Payment for certain item.
+
+`saleInfoId`: autoincreament uint256 needed to be encoded as part of the signed message;
 
 `_nftAddress`: NFT contract address;
 

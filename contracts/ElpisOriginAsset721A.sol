@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 // import "hardhat/console.sol";
 
-contract ElpisOriginAsset721A is ERC721A, AccessControl {
+contract ElpisOriginAsset721A is AccessControl, ERC721A {
 
     /// @dev This event emits when the metadata of a token is changed.
     /// So that the third-party platforms such as NFT market could
