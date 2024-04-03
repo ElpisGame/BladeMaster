@@ -30,11 +30,11 @@ describe("Elpis Origin", function () {
         // console.log(">>Kec: ", await contract.kec(a, b));
         // // console.log(await contract.verify(a, b, signature));
 
-        let salt = 1,
+        let salt = 11,
             addr = "0xF83f5B45ceA84a6497B7E9Ef3c83999Df6967d0E",
-            id = 5,
+            id = 4,
             token = "0xfe3fc4e22e02C5AbdfAD6553f36Df2C982E64a06",
-            amount = 100000000;
+            amount = 10000;
         const message3 = ethers.solidityPackedKeccak256(
             ["uint256", "address", "uint256", "address", "uint256"],
             [salt, addr, id, token, amount]
