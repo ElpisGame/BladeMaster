@@ -14,7 +14,7 @@ import {
     ProxyTest__factory,
 } from "../typechain-types";
 
-const isTesting = true;
+const isTesting = false;
 
 let testNftAddress: string;
 // new deployment

@@ -1,10 +1,10 @@
 import { ethers } from "hardhat";
 import { ElpisOriginAsset721A__factory } from "../typechain-types";
 
-const isMainnet = false;
+const isMainnet = true;
 
 const MAINNET_MINTER = "0x8DCa84A08e7E585D7DC5b7079D53fd3BBFb07c65";
-const MAINNET_VAULT_ADDRESS = "0xf2E2628997DA78AFf2a7692810F786b4Fe4E1811";
+const MAINNET_VAULT_ADDRESS = "0x2810cBd6eA11205C1400F2AdF19d0B3102129C7c";
 const MAINNET_NFT_NAME = "ELPIS ORIGIN CHARACTER";
 const MAINNET_NFT_SYMBOL = "ELOC";
 const MAINNET_TOKEN_URI =
